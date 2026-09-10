@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# Java / Spring Boot
+target/
+*.class
+*.jar
+.gradle/
+build/
+
+# Node / React
+node_modules/
+dist/
+build/
+.npm/
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Large data
+data/satellite/*
+data/ais/*
+data/environmental/*
+!data/satellite/.gitkeep
+!data/ais/.gitkeep
+!data/environmental/.gitkeep
+
+# Generated outputs
+outputs/
+results/
+tmp/
