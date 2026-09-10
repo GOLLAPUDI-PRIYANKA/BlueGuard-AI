@@ -18,11 +18,11 @@ MarineGuard supports:
 
 ```text
 marineguard/
-├── frontend/              # Member 6 – React GIS dashboard
-├── backend/               # Member 5 – Backend APIs/database/orchestration
-├── ai-services/           # Member 2 – Oil-spill AI detection
-├── ais-services/          # Member 3 – AIS analysis
-├── gis-services/          # Member 4 – GIS/backtracking/forecast/impact
+├── frontend/              
+├── backend/              
+├── ai-services/          
+├── ais-services/         
+├── gis-services/         
 ├── data/
 │   ├── satellite/
 │   ├── ais/
