@@ -1,68 +1,108 @@
-# BlueGuard-AI Backend
+# MarineGuard AI – SIH 26143
 
-## Purpose
+AI-Based Oil Spill Detection, Spill Backtracking & Vessel Attribution System.
 
-The backend acts as the main integration layer of the BlueGuard-AI system.
+## Project Goal
+MarineGuard supports:
+1. Satellite scene selection/upload
+2. Oil-spill detection
+3. Spill characterization
+4. Spill-origin backtracking
+5. AIS vessel correlation
+6. Candidate-vessel attribution
+7. 24/48/72-hour drift forecasting
+8. Environmental impact assessment
+9. GIS visualization and reporting
 
-## Responsibilities
+## Repository Structure
 
-- Connect AI-based oil spill detection
-- Connect GIS spill backtracking
-- Connect AIS vessel analysis
-- Connect vessel attribution and ranking
-- Connect spill movement forecasting
-- Connect impact analysis
-- Provide APIs for the frontend dashboard
+```text
+marineguard/
+├── frontend/              
+├── backend/              
+├── ai-services/          
+├── ais-services/         
+├── gis-services/         
+├── data/
+│   ├── satellite/
+│   ├── ais/
+│   └── environmental/
+├── docs/
+│   ├── architecture/
+│   ├── api/
+│   └── testing/
+├── docker-compose.yml
+├── README.md
+└── .gitignore
+```
 
-## API Base URL
+## Public API Base Path
 
-/api/v1
+`/api/v1`
 
-## Main Workflow
+The public APIs are exposed through the backend. Specialist modules use internal service contracts.
 
-Satellite Scene
+## Common IDs
+
+- `spillId` – unique oil-spill identifier
+- `detectionId` – unique detection identifier
+- `vesselId` – unique vessel identifier
+- `analysisId` – unique analysis identifier
+
+## Branching Strategy
+
+- `main` – stable/demo-ready code
+- `develop` – integration branch
+- `feature/member2-ai`
+- `feature/member3-ais`
+- `feature/member4-gis`
+- `feature/member5-backend`
+- `feature/member6-frontend`
+
+Feature branches are merged into `develop` through pull requests. Member 1 coordinates integration and reviews.
+
+## Integration Flow
+
+Satellite Image
 → AI Detection
-→ Spill Analysis
 → GIS Backtracking
-→ AIS Candidate Vessels
-→ Attribution Ranking
+→ AIS Candidate Search
+→ Attribution
 → Forecast
-→ Impact Analysis
-→ Dashboard
+→ Impact
+→ Backend
+→ React GIS Dashboard
 
-## Main API Endpoints
+## Development Rule
 
-POST /api/v1/spills/detect
+Do not commit large raw satellite/AIS datasets to Git. Keep sample/test data small and document the source of larger datasets.
 
-POST /api/v1/spills/{spillId}/analyze
+## API Documentation
 
-GET /api/v1/spills/{spillId}
+Place the final API contract under:
 
-GET /api/v1/spills/{spillId}/nearby-vessels
+`docs/api/api-contract.md`
 
-GET /api/v1/vessels/{vesselId}/trajectory
+## Architecture Documentation
 
-GET /api/v1/spills/{spillId}/origin
+Place the system architecture document/diagram under:
 
-GET /api/v1/spills/{spillId}/suspects
+`docs/architecture/`
 
-GET /api/v1/spills/{spillId}/forecast
+## Testing Documentation
 
-GET /api/v1/spills/{spillId}/impact
+Place integration and end-to-end test cases under:
 
-GET /api/v1/dashboard/summary
+`docs/testing/`
 
-GET /api/v1/spills/{spillId}/report
+## Team Rule
 
-## Integration IDs
+Every member must provide:
+- runnable module/code
+- requirements/dependency file
+- sample input
+- sample output
+- endpoint details, if applicable
+- short README for their module
 
-- spillId
-- detectionId
-- analysisId
-- vesselId
-
-## Important Note
-
-The system is an investigation-support system.
-
-Vessel rankings and attribution scores must not be treated as automatic legal accusations.
+Before merging, the module must follow the agreed API contract.
