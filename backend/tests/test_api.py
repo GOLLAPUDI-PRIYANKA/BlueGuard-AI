@@ -2,6 +2,7 @@ import os
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app
+from pathlib import Path
 
 
 def test_health(client):
@@ -15,12 +16,19 @@ def test_root(client):
     assert resp.status_code == 200
     assert resp.json()["status"] == "ok"
 
+AI_IMAGE = str(
+    Path(__file__).resolve().parents[2] / "ai-services" / "image1.jpg"
+)
 
 def test_detect_spill_success(client):
     payload = {
-        "imageUrl": "sentinel_scene_001.tif",
+    "imageUrl": AI_IMAGE,
         "source": "SENTINEL_1",
         "captureTime": "2026-08-29T08:30:00Z",
+        "imageBounds": [
+            [16.40, 80.60],
+            [16.50, 80.70]
+        ],
     }
     resp = client.post("/api/v1/spills/detect", json=payload)
     assert resp.status_code == 200

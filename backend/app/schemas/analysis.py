@@ -11,6 +11,7 @@ class AnalyzeRequest(BaseModel):
 
 
 class AnalyzeResponseData(UtcModel):
+    analysisId: str
     spillId: str
     status: str
     originConfidence: Optional[float] = None

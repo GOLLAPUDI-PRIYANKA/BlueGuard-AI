@@ -30,7 +30,7 @@ class SpillService:
         self.ai_client = build_ai_client()
 
     async def detect_spill(self, request: DetectRequest) -> DetectResponseData:
-        ai_result = await self.ai_client.detect(request.imageUrl)
+        ai_result = await self.ai_client.detect(request.imageUrl, image_bounds=request.imageBounds)
 
         if not ai_result.detected:
             spill_id = generate_id("SP")

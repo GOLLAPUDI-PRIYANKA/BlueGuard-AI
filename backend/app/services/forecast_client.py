@@ -52,6 +52,7 @@ class MockForecastClient(ForecastClient):
         for hours in [24, 48, 72]:
             factor = hours / 24.0
             area = round(spill_area_sq_km * (1 + 0.15 * factor) + random.uniform(-1, 1), 1)
+            area = max(0.0, area)
             center_lon = spill_lon + drift_per_hour * hours
             center_lat = spill_lat + drift_per_hour * 0.5 * hours
 

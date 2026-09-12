@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql://marineguard:marineguard@localhost:5432/marineguard_db"
     AI_SERVICE_URL: str = "http://localhost:8001"
     AIS_SERVICE_URL: str = "http://localhost:8002"
-    GIS_SERVICE_URL: str = "http://localhost:8003"
+    GIS_SERVICE_URL: str = "http://localhost:5001"
     ATTRIBUTION_SERVICE_URL: str = "http://localhost:8004"
     FORECAST_SERVICE_URL: str = "http://localhost:8005"
     IMPACT_SERVICE_URL: str = "http://localhost:8006"

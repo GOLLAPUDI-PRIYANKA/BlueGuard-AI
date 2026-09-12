@@ -13,10 +13,9 @@ from app.core.exceptions import (
     AnalysisFailedError,
 )
 from app.schemas.analysis import AnalyzeRequest, AnalyzeResponseData
-from app.services.gis_client import MockGISClient
-from app.services.ais_client import MockAISClient
-from app.services.attribution_client import MockAttributionClient
-from app.services.forecast_client import MockForecastClient
+from app.services.gis_client import build_gis_client
+from app.services.ais_client import build_ais_client
+from app.services.attribution_client import build_attribution_client
 from app.services.impact_client import MockImpactClient
 from app.models.spill import SpillStatus
 
@@ -32,16 +31,17 @@ class AnalysisService:
         self.vessel_repo = VesselRepository(db)
         self.forecast_repo = ForecastRepository(db)
         self.impact_repo = ImpactRepository(db)
-        self.gis_client = MockGISClient()
-        self.ais_client = MockAISClient()
-        self.attribution_client = MockAttributionClient()
-        self.forecast_client = MockForecastClient()
+        self.gis_client = build_gis_client()
+        self.ais_client = build_ais_client()
+        self.attribution_client = build_attribution_client()
         self.impact_client = MockImpactClient()
 
     async def analyze(self, spill_id: str, request: AnalyzeRequest) -> AnalyzeResponseData:
         spill = self.spill_repo.get_by_id(spill_id)
         if not spill:
             raise SpillNotFoundError(spill_id)
+
+        analysis_id = generate_id("ANL")
 
         try:
             self.spill_repo.update_status(spill_id, SpillStatus.UNDER_INVESTIGATION)
@@ -66,18 +66,15 @@ class AnalysisService:
 
             suspect_scores = await self._run_attribution(
                 spill_id=spill_id,
-                origin_lon=origin["lon"],
-                origin_lat=origin["lat"],
-                origin_time=origin["time"],
                 candidates=candidates,
             )
 
             if request.includeForecast:
                 await self._run_forecast(
                     spill_id=spill_id,
-                    spill_lon=centroid.x,
-                    spill_lat=centroid.y,
-                    spill_area=spill.area_sq_km,
+                    origin_lat=origin["lat"],
+                    origin_lon=origin["lon"],
+                    origin_time=origin["time"],
                 )
 
             if request.includeImpact:
@@ -97,6 +94,7 @@ class AnalysisService:
                 top_vessel = suspect_scores[0].vessel_id
 
             return AnalyzeResponseData(
+                analysisId=analysis_id,
                 spillId=spill_id,
                 status="ANALYSIS_COMPLETE",
                 originConfidence=origin["confidence"],
@@ -151,6 +149,8 @@ class AnalysisService:
             origin_lat=origin_lat,
             start_time=start_time,
             end_time=end_time,
+            spatial_radius_km=10.0,
+            temporal_window_minutes=60.0,
         )
 
         for candidate in result.candidates:
@@ -183,21 +183,14 @@ class AnalysisService:
     async def _run_attribution(
         self,
         spill_id: str,
-        origin_lon: float,
-        origin_lat: float,
-        origin_time: str,
         candidates: list,
     ) -> list:
-        vessel_ids = [c.vessel_id for c in candidates]
-        if not vessel_ids:
+        if not candidates:
             return []
 
         result = await self.attribution_client.score_vessels(
             spill_id=spill_id,
-            origin_lon=origin_lon,
-            origin_lat=origin_lat,
-            origin_time=origin_time,
-            candidate_vessel_ids=vessel_ids,
+            candidates=candidates,
         )
 
         self.suspect_repo.delete_by_spill_id(spill_id)
@@ -221,14 +214,17 @@ class AnalysisService:
     async def _run_forecast(
         self,
         spill_id: str,
-        spill_lon: float,
-        spill_lat: float,
-        spill_area: float,
+        origin_lat: float,
+        origin_lon: float,
+        origin_time: str,
     ):
-        result = await self.forecast_client.forecast(
-            spill_lon=spill_lon,
-            spill_lat=spill_lat,
-            spill_area_sq_km=spill_area,
+        result = await self.gis_client.forecast(
+            spill_lon=origin_lon,
+            spill_lat=origin_lat,
+            spill_area_sq_km=0.0,
+            origin_time=origin_time,
+            hours_forward=72,
+            scenario="arabian_sea_demo",
         )
 
         self.forecast_repo.delete_by_spill_id(spill_id)

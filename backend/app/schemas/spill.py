@@ -9,6 +9,10 @@ class DetectRequest(BaseModel):
     imageUrl: str = Field(..., min_length=1, description="Image URI/path")
     source: str = Field(..., min_length=1, description="Image source e.g. SENTINEL_1")
     captureTime: datetime = Field(..., description="Image capture time in UTC")
+    imageBounds: Optional[List[List[float]]] = Field(
+        default=None,
+        description="Optional georeferencing bounds [[south, west], [north, east]] to convert model pixel polygons to WGS84",
+    )
 
 
 class DetectResponseData(UtcModel):

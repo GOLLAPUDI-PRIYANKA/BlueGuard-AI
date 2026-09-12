@@ -1,3 +1,4 @@
+import logging
 import math
 import random
 from dataclasses import dataclass
@@ -7,6 +8,8 @@ import httpx
 from shapely.geometry import MultiPolygon, Polygon
 
 from app.core.config import get_settings
+
+logger = logging.getLogger("marineguard.ai")
 
 
 @dataclass
@@ -26,7 +29,9 @@ class AIClient:
     def __init__(self, base_url: str = "http://localhost:8001"):
         self.base_url = base_url
 
-    async def detect(self, image_uri: str, model_version: str = "unet_v1") -> AIDetectionResult:
+    async def detect(
+        self, image_uri: str, model_version: str = "unet_v1", image_bounds: Optional[list[list[float]]] = None
+    ) -> AIDetectionResult:
         raise NotImplementedError("Real AI client not yet implemented")
 
 
@@ -76,15 +81,37 @@ class RealAIClient(AIClient):
             raise ServiceUnavailableError("AI", ErrorCode.AI_SERVICE_UNAVAILABLE)
 
     @classmethod
-    def _georef_pixels(cls, polygons: list[list[list[float]]]) -> MultiPolygon:
-        min_lon = cls.TILE_CENTER_LON - cls.TILE_SPAN_DEG / 2
-        max_lon = cls.TILE_CENTER_LON + cls.TILE_SPAN_DEG / 2
-        min_lat = cls.TILE_CENTER_LAT - cls.TILE_SPAN_DEG / 2
-        max_lat = cls.TILE_CENTER_LAT + cls.TILE_SPAN_DEG / 2
+    def _georef_pixels(
+        cls,
+        polygons: list[list[list[float]]],
+        image_bounds: Optional[list[list[float]]] = None,
+    ) -> MultiPolygon:
+        """Map 256x256 pixel polygons to WGS84.
+
+        image_bounds = [[south, west], [north, east]] with the pixel origin at
+        top-left, matching the GIS member's pixel_polygons_to_geojson().
+        Falls back to a demo tile centered on the detection area when bounds
+        are not supplied.
+        """
+        if image_bounds is not None:
+            if not isinstance(image_bounds, list) or len(image_bounds) != 2:
+                raise ValueError("image_bounds must be [[south, west], [north, east]]")
+            (south, west), (north, east) = (
+                [float(v) for v in point] for point in image_bounds
+            )
+            if not (-90 <= south < north <= 90 and -180 <= west < east <= 180):
+                raise ValueError("Invalid image_bounds")
+            min_lon, max_lon = west, east
+            max_lat, min_lat = north, south
+        else:
+            min_lon = cls.TILE_CENTER_LON - cls.TILE_SPAN_DEG / 2
+            max_lon = cls.TILE_CENTER_LON + cls.TILE_SPAN_DEG / 2
+            min_lat = cls.TILE_CENTER_LAT - cls.TILE_SPAN_DEG / 2
+            max_lat = cls.TILE_CENTER_LAT + cls.TILE_SPAN_DEG / 2
 
         def to_lon_lat(x: float, y: float) -> tuple[float, float]:
-            lon = min_lon + (x / (cls.TILE_PIXELS - 1)) * cls.TILE_SPAN_DEG
-            lat = max_lat - (y / (cls.TILE_PIXELS - 1)) * cls.TILE_SPAN_DEG
+            lon = min_lon + (x / (cls.TILE_PIXELS - 1)) * (max_lon - min_lon)
+            lat = max_lat - (y / (cls.TILE_PIXELS - 1)) * (max_lat - min_lat)
             return lon, lat
 
         polys = []
@@ -95,6 +122,92 @@ class RealAIClient(AIClient):
             if poly.is_valid and not poly.is_empty:
                 polys.append(poly)
         return MultiPolygon(polys) if polys else MultiPolygon()
+
+    @staticmethod
+    def _validate_polygons(polygons) -> list[list[list[float]]]:
+        """Validate the AI service polygon payload (pixel space 0..255)."""
+        if not isinstance(polygons, list):
+            raise ValueError("AI polygons must be a list")
+        clean = []
+        for contour in polygons:
+            if not isinstance(contour, list) or len(contour) < 3:
+                continue
+            points = []
+            for point in contour:
+                if not isinstance(point, (list, tuple)) or len(point) != 2:
+                    raise ValueError("Each AI polygon point must be [x, y]")
+                x, y = float(point[0]), float(point[1])
+                if not (0 <= x <= 255 and 0 <= y <= 255):
+                    raise ValueError("AI polygon pixel coordinates must be in the 256x256 range")
+                points.append([x, y])
+            if len(points) >= 3:
+                clean.append(points)
+        return clean
+
+    async def detect(
+        self,
+        image_uri: str,
+        model_version: str = "unet_v1",
+        image_bounds: Optional[list[list[float]]] = None,
+    ) -> AIDetectionResult:
+        from app.core.exceptions import AppException, ErrorCode, ServiceUnavailableError
+        payload = await self._post_predict(image_uri, model_version)
+
+        try:
+            detected = bool(payload.get("detected", False))
+            confidence = float(payload.get("confidence", 0.0))
+            if not 0.0 <= confidence <= 1.0:
+                raise ValueError(f"AI confidence outside 0..1: {confidence}")
+            polygons = self._validate_polygons(payload.get("polygons") or [])
+            if image_bounds is not None:
+                self._georef_pixels([[[0, 0], [255, 0], [255, 255], [0, 255], [0, 0]]], image_bounds)
+        except (TypeError, ValueError) as exc:
+            logger.error(f"Invalid AI service payload for {image_uri}: {exc}")
+            raise AppException(
+                ErrorCode.MODEL_INFERENCE_FAILED,
+                f"AI service returned invalid detection data: {exc}",
+                status_code=502,
+            )
+
+        mask_uri = payload.get("maskUri") or f"results/masks/{image_uri.replace('/', '_').replace('.', '_')}.tif"
+
+        if detected and polygons:
+            geometry = self._georef_pixels(polygons, image_bounds)
+            if not geometry.is_empty:
+                area = self._area_sq_km(geometry)
+                centroid = geometry.centroid
+                return AIDetectionResult(
+                    detected=True,
+                    confidence=confidence,
+                    area_sq_km=area,
+                    severity=self._severity_for(area),
+                    centroid_lat=round(centroid.y, 6),
+                    centroid_lon=round(centroid.x, 6),
+                    geometry_wkt=geometry.wkt,
+                    mask_uri=mask_uri,
+                    model_version=payload.get("modelVersion") or model_version,
+                )
+
+        fallback_geometry = self._georef_pixels(
+            [[[0, 0], [255, 0], [255, 255], [0, 255], [0, 0]]],
+            image_bounds,
+        )
+        fallback_centroid = (
+            fallback_geometry.centroid
+            if not fallback_geometry.is_empty
+            else (self.TILE_CENTER_LAT, self.TILE_CENTER_LON)
+        )
+        return AIDetectionResult(
+            detected=False,
+            confidence=confidence,
+            area_sq_km=0.0,
+            severity="LOW",
+            centroid_lat=round(fallback_centroid.y, 6),
+            centroid_lon=round(fallback_centroid.x, 6),
+            geometry_wkt=fallback_geometry.wkt,
+            mask_uri=mask_uri,
+            model_version=payload.get("modelVersion") or model_version,
+        )
 
     @staticmethod
     def _area_sq_km(geometry: MultiPolygon) -> float:
@@ -114,49 +227,11 @@ class RealAIClient(AIClient):
             return "MEDIUM"
         return "LOW"
 
-    async def detect(self, image_uri: str, model_version: str = "unet_v1") -> AIDetectionResult:
-        payload = await self._post_predict(image_uri, model_version)
-
-        detected = bool(payload.get("detected", False))
-        confidence = float(payload.get("confidence", 0.0))
-        mask_uri = payload.get("maskUri") or f"results/masks/{image_uri.replace('/', '_').replace('.', '_')}.tif"
-        polygons = payload.get("polygons") or []
-
-        if detected and polygons:
-            geometry = self._georef_pixels(polygons)
-            if not geometry.is_empty:
-                area = self._area_sq_km(geometry)
-                centroid = geometry.centroid
-                return AIDetectionResult(
-                    detected=True,
-                    confidence=confidence,
-                    area_sq_km=area,
-                    severity=self._severity_for(area),
-                    centroid_lat=round(centroid.y, 6),
-                    centroid_lon=round(centroid.x, 6),
-                    geometry_wkt=geometry.wkt,
-                    mask_uri=mask_uri,
-                    model_version=payload.get("modelVersion") or model_version,
-                )
-
-        fallback_geometry = self._georef_pixels(
-            [[[0, 0], [255, 0], [255, 255], [0, 255], [0, 0]]]
-        )
-        return AIDetectionResult(
-            detected=False,
-            confidence=confidence,
-            area_sq_km=0.0,
-            severity="LOW",
-            centroid_lat=self.TILE_CENTER_LAT,
-            centroid_lon=self.TILE_CENTER_LON,
-            geometry_wkt=fallback_geometry.wkt,
-            mask_uri=mask_uri,
-            model_version=payload.get("modelVersion") or model_version,
-        )
-
 
 class MockAIClient(AIClient):
-    async def detect(self, image_uri: str, model_version: str = "unet_v1") -> AIDetectionResult:
+    async def detect(
+        self, image_uri: str, model_version: str = "unet_v1", image_bounds: Optional[list[list[float]]] = None
+    ) -> AIDetectionResult:
         detected = True
         confidence = round(random.uniform(0.75, 0.98), 2)
         area = round(random.uniform(5.0, 40.0), 1)

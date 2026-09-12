@@ -1,11 +1,19 @@
 import pytest
+from pathlib import Path
 
+AI_IMAGE = str(
+    Path(__file__).resolve().parents[2] / "ai-services" / "image1.jpg"
+)
 
 def test_full_pipeline_end_to_end(client):
     payload = {
-        "imageUrl": "sentinel_scene_demo.tif",
+        "imageUrl": AI_IMAGE,
         "source": "SENTINEL_1",
         "captureTime": "2026-08-29T08:30:00Z",
+        "imageBounds": [
+            [16.40, 80.60],
+            [16.50, 80.70]
+        ],
     }
 
     detect_resp = client.post("/api/v1/spills/detect", json=payload)

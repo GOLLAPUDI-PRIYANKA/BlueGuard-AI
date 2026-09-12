@@ -54,3 +54,7 @@ ais-services/data/*
 
 # Archives
 *.zip
+
+# M2 AI model delivery (large weights / sender copy)
+backend/to send/
+backend/to send.zip
