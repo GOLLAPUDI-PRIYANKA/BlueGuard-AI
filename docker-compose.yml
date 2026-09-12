@@ -1,0 +1,53 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: marineguard-db
+    environment:
+      POSTGRES_USER: marineguard
+      POSTGRES_PASSWORD: marineguard
+      POSTGRES_DB: marineguard_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U marineguard"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  ai-service:
+    build:
+      context: ./ai-services
+    container_name: marineguard-ai
+    environment:
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ./ai-services/outputs:/app/outputs
+    ports:
+      - "8001:8001"
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8001
+
+  backend:
+    build:
+      context: ./backend
+    container_name: marineguard-backend
+    environment:
+      DATABASE_URL: postgresql://marineguard:marineguard@db:5432/marineguard_db
+      AI_SERVICE_URL: http://ai-service:8001
+      AIS_SERVICE_URL: http://host.docker.internal:8002
+      GIS_SERVICE_URL: http://host.docker.internal:8003
+      ATTRIBUTION_SERVICE_URL: http://host.docker.internal:8004
+      FORECAST_SERVICE_URL: http://host.docker.internal:8005
+      IMPACT_SERVICE_URL: http://host.docker.internal:8006
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000"
+
+volumes:
+  postgres_data:

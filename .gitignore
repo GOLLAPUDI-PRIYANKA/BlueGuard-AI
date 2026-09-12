@@ -46,3 +46,11 @@ data/environmental/*
 outputs/
 results/
 tmp/
+
+# M3 AIS service data
+ais-services/data/*
+!ais-services/data/ais_sample.csv
+!ais-services/data/.gitkeep
+
+# Archives
+*.zip
