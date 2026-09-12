@@ -40,6 +40,7 @@ services:
       ATTRIBUTION_SERVICE_URL: http://host.docker.internal:8004
       FORECAST_SERVICE_URL: http://host.docker.internal:8005
       IMPACT_SERVICE_URL: http://host.docker.internal:8006
+      USE_MOCK_SERVICES: "false"
     ports:
       - "8000:8000"
     depends_on:
