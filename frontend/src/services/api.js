@@ -1,33 +1,57 @@
-// M5 FastAPI integration.
-// Change this URL when your backend is ready.
-const API_BASE_URL = "http://localhost:8000/api/v1";
+// BlueGuard M6 Frontend → M5 FastAPI Backend
 
-export async function getSpill(spillId) {
-  const response = await fetch(`${API_BASE_URL}/spills/${spillId}`);
-  if (!response.ok) throw new Error("Unable to load spill");
-  return response.json();
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
+
+async function apiRequest(endpoint, options = {}) {
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+    ...options,
+  });
+
+  const result = await response.json();
+
+  if (!response.ok || result.success === false) {
+    throw new Error(result.message || "API request failed");
+  }
+
+  return result;
 }
 
-export async function getSuspects(spillId) {
-  const response = await fetch(`${API_BASE_URL}/spills/${spillId}/suspects`);
-  if (!response.ok) throw new Error("Unable to load suspects");
-  return response.json();
-}
+export const getDashboardSummary = () =>
+  apiRequest("/dashboard/summary");
 
-export async function getOrigin(spillId) {
-  const response = await fetch(`${API_BASE_URL}/spills/${spillId}/origin`);
-  if (!response.ok) throw new Error("Unable to load origin");
-  return response.json();
-}
+export const getSpill = (spillId) =>
+  apiRequest(`/spills/${spillId}`);
 
-export async function getForecast(spillId) {
-  const response = await fetch(`${API_BASE_URL}/spills/${spillId}/forecast`);
-  if (!response.ok) throw new Error("Unable to load forecast");
-  return response.json();
-}
+export const getNearbyVessels = (spillId) =>
+  apiRequest(`/spills/${spillId}/nearby-vessels`);
 
-export async function getImpact(spillId) {
-  const response = await fetch(`${API_BASE_URL}/spills/${spillId}/impact`);
-  if (!response.ok) throw new Error("Unable to load impact");
-  return response.json();
-}
+export const getVesselTrajectory = (vesselId) =>
+  apiRequest(`/vessels/${vesselId}/trajectory`);
+
+export const getOrigin = (spillId) =>
+  apiRequest(`/spills/${spillId}/origin`);
+
+export const getSuspects = (spillId) =>
+  apiRequest(`/spills/${spillId}/suspects`);
+
+export const getForecast = (spillId) =>
+  apiRequest(`/spills/${spillId}/forecast`);
+
+export const getImpact = (spillId) =>
+  apiRequest(`/spills/${spillId}/impact`);
+
+export const analyzeSpill = (spillId) =>
+  apiRequest(`/spills/${spillId}/analyze`, {
+    method: "POST",
+    body: JSON.stringify({
+      includeForecast: true,
+      includeImpact: true,
+      aisHoursBefore: 12,
+      aisHoursAfter: 12,
+    }),
+  });
