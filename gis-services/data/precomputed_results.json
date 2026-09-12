@@ -1,0 +1,36 @@
+{
+  "spill_id": "SP101",
+  "scenario": "arabian_sea_demo",
+  "detected": {
+    "lat": 15.462,
+    "lon": 73.845,
+    "time": "2026-08-29T10:00:00Z"
+  },
+  "origin": {
+    "lat": 15.201,
+    "lon": 73.512,
+    "time": "2026-08-28T23:40:00Z",
+    "confidence": 0.81,
+    "uncertainty_km": 12
+  },
+  "forecast": [
+    {
+      "hours": 24,
+      "lat": 15.58,
+      "lon": 74.12,
+      "area_km2": 22.4
+    },
+    {
+      "hours": 48,
+      "lat": 15.89,
+      "lon": 74.45,
+      "area_km2": 31.7
+    },
+    {
+      "hours": 72,
+      "lat": 16.12,
+      "lon": 74.78,
+      "area_km2": 43.2
+    }
+  ]
+}
