@@ -1,112 +1,108 @@
-# BlueGuard AI — Backend
+# MarineGuard AI – SIH 26143
 
-FastAPI + PostgreSQL/PostGIS backend for the SIH 2026 Marine Oil Spill Detection, Spill Backtracking & Vessel Attribution system (Problem Statement 26143).
+AI-Based Oil Spill Detection, Spill Backtracking & Vessel Attribution System.
 
-## Architecture
+## Project Goal
+MarineGuard supports:
+1. Satellite scene selection/upload
+2. Oil-spill detection
+3. Spill characterization
+4. Spill-origin backtracking
+5. AIS vessel correlation
+6. Candidate-vessel attribution
+7. 24/48/72-hour drift forecasting
+8. Environmental impact assessment
+9. GIS visualization and reporting
 
-```
-React Frontend
-      ↓
-   FastAPI
-      ↓
-   Routers
-      ↓
-   Services  →  External Service Clients (AI/AIS/GIS/Attribution/Forecast/Impact)
-      ↓
-Repositories
-      ↓
-PostgreSQL + PostGIS
-```
+## Repository Structure
 
-The backend is the central integration layer. It never trains models or runs backtracking algorithms itself; it orchestrates external services through clean client interfaces and stores validated results.
-
-## Getting Started (Docker)
-
-```bash
-docker compose up --build
-```
-
-- API: `http://localhost:8000`
-- Swagger docs: `http://localhost:8000/docs`
-
-The PostGIS database starts automatically with `POSTGRES_DB=marineguard_db`, and Alembic migrations run on backend startup.
-
-## Getting Started (Local)
-
-1. Create a PostGIS database:
-
-```bash
-docker run --name marineguard-db \
-  -e POSTGRES_USER=marineguard -e POSTGRES_PASSWORD=marineguard -e POSTGRES_DB=marineguard_db \
-  -p 5432:5432 -d postgis/postgis:16-3.4-alpine
+```text
+marineguard/
+├── frontend/              
+├── backend/              
+├── ai-services/          
+├── ais-services/         
+├── gis-services/         
+├── data/
+│   ├── satellite/
+│   ├── ais/
+│   └── environmental/
+├── docs/
+│   ├── architecture/
+│   ├── api/
+│   └── testing/
+├── docker-compose.yml
+├── README.md
+└── .gitignore
 ```
 
-2. Install dependencies:
+## Public API Base Path
 
-```bash
-pip install -r requirements.txt
-```
+`/api/v1`
 
-3. Configure environment:
+The public APIs are exposed through the backend. Specialist modules use internal service contracts.
 
-```bash
-cp .env.example .env
-```
+## Common IDs
 
-4. Run migrations:
+- `spillId` – unique oil-spill identifier
+- `detectionId` – unique detection identifier
+- `vesselId` – unique vessel identifier
+- `analysisId` – unique analysis identifier
 
-```bash
-alembic upgrade head
-```
+## Branching Strategy
 
-5. Start the API:
+- `main` – stable/demo-ready code
+- `develop` – integration branch
+- `feature/member2-ai`
+- `feature/member3-ais`
+- `feature/member4-gis`
+- `feature/member5-backend`
+- `feature/member6-frontend`
 
-```bash
-uvicorn app.main:app --reload
-```
+Feature branches are merged into `develop` through pull requests. Member 1 coordinates integration and reviews.
 
-## API Endpoints
+## Integration Flow
 
-Base URL: `/api/v1`
+Satellite Image
+→ AI Detection
+→ GIS Backtracking
+→ AIS Candidate Search
+→ Attribution
+→ Forecast
+→ Impact
+→ Backend
+→ React GIS Dashboard
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/spills/detect` | Register satellite image for detection |
-| GET | `/spills/{spillId}` | Get complete spill metadata |
-| GET | `/spills/{spillId}/nearby-vessels` | Find vessels near spill area |
-| GET | `/vessels/{vesselId}/trajectory` | Get vessel trajectory |
-| GET | `/spills/{spillId}/origin` | Estimated source region/time |
-| GET | `/spills/{spillId}/suspects` | Ranked suspect vessels |
-| GET | `/spills/{spillId}/forecast` | 24/48/72h drift forecast |
-| GET | `/spills/{spillId}/impact` | Environmental impact risk |
-| GET | `/dashboard/summary` | Dashboard KPIs |
-| POST | `/spills/{spillId}/analyze` | Run full investigation pipeline |
-| GET | `/spills/{spillId}/report` | Investigation report metadata |
+## Development Rule
 
-### Response Format
+Do not commit large raw satellite/AIS datasets to Git. Keep sample/test data small and document the source of larger datasets.
 
-Success:
-```json
-{"success": true, "data": {}, "message": "..."}
-```
+## API Documentation
 
-Error:
-```json
-{"success": false, "errorCode": "...", "message": "..."}
-```
+Place the final API contract under:
 
-## Mock Services
+`docs/api/api-contract.md`
 
-The other modules (AI, AIS, GIS, Attribution, Forecast, Impact) are developed by other team members. The backend ships with mock clients in `app/services/`, so the system runs end-to-end immediately. To plug in a real service, replace the mock class with a concrete HTTP client implementing the same interface — no public API changes required.
+## Architecture Documentation
 
-## Testing
+Place the system architecture document/diagram under:
 
-```bash
-pytest
-```
+`docs/architecture/`
 
-Tests cover the full pipeline with mocked external services, so no ML models are required.
+## Testing Documentation
 
-## Configuration
+Place integration and end-to-end test cases under:
 
-See `.env.example`. All service URLs and the database connection string come from environment variables.
+`docs/testing/`
+
+## Team Rule
+
+Every member must provide:
+- runnable module/code
+- requirements/dependency file
+- sample input
+- sample output
+- endpoint details, if applicable
+- short README for their module
+
+Before merging, the module must follow the agreed API contract.
