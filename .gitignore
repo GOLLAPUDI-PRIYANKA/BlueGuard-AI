@@ -46,3 +46,15 @@ data/environmental/*
 outputs/
 results/
 tmp/
+
+# M3 AIS service data
+ais-services/data/*
+!ais-services/data/ais_sample.csv
+!ais-services/data/.gitkeep
+
+# Archives
+*.zip
+
+# M2 AI model delivery (large weights / sender copy)
+backend/to send/
+backend/to send.zip

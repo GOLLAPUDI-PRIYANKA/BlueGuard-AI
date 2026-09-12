@@ -1,0 +1,13 @@
+{
+  "success": true,
+  "data": {
+    "spillId": "SPILL-001",
+    "forecast": {
+      "24h": "forecast_24h.geojson",
+      "48h": "forecast_48h.geojson",
+      "72h": "forecast_72h.geojson"
+    },
+    "uncertainty": "medium"
+  },
+  "message": "Mock spill forecast created"
+}

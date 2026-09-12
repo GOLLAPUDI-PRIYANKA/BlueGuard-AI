@@ -1,0 +1,27 @@
+{
+  "success": true,
+  "data": {
+    "spillId": "SPILL-001",
+    "vessels": [
+      {
+        "vesselId": "VESSEL-001",
+        "name": "Demo Vessel A",
+        "spatialProximity": 0.91,
+        "temporalProximity": 0.85,
+        "trajectoryConsistency": 0.88,
+        "sourceRegionOverlap": 0.80,
+        "aisBehaviorSignal": 0.75
+      },
+      {
+        "vesselId": "VESSEL-002",
+        "name": "Demo Vessel B",
+        "spatialProximity": 0.72,
+        "temporalProximity": 0.80,
+        "trajectoryConsistency": 0.69,
+        "sourceRegionOverlap": 0.71,
+        "aisBehaviorSignal": 0.60
+      }
+    ]
+  },
+  "message": "Mock AIS candidates created"
+}
