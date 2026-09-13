@@ -24,6 +24,7 @@ services:
       PYTHONUNBUFFERED: "1"
     volumes:
       - ./ai-services/outputs:/app/outputs
+      - ./data/uploads:/app/data/uploads
     ports:
       - "8001:8001"
     command: uvicorn api.main:app --host 0.0.0.0 --port 8001
@@ -43,6 +44,8 @@ services:
       USE_MOCK_SERVICES: "false"
     ports:
       - "8000:8000"
+    volumes:
+      - ./data/uploads:/app/data/uploads
     depends_on:
       db:
         condition: service_healthy
