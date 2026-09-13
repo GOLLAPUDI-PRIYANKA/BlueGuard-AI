@@ -1,7 +1,11 @@
-// BlueGuard M6 Frontend → M5 FastAPI Backend
+// BlueGuard M6 Frontend → M5 FastAPI Backend Service Client
+// Centralized API layer following team contracts
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "/api/v1";
+export const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
+
+export const BACKEND_ROOT_URL =
+  API_BASE_URL.replace(/\/api\/v1\/?$/, "");
 
 async function apiRequest(endpoint, options = {}) {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -15,10 +19,29 @@ async function apiRequest(endpoint, options = {}) {
   const result = await response.json();
 
   if (!response.ok || result.success === false) {
-    throw new Error(result.message || "API request failed");
+    const errorMsg = result.message || `API error ${response.status}: ${response.statusText}`;
+    const err = new Error(errorMsg);
+    err.status = response.status;
+    err.errorCode = result.errorCode;
+    throw err;
   }
 
   return result;
+}
+
+export async function checkBackendHealth() {
+  try {
+    const response = await fetch(`${BACKEND_ROOT_URL}/health`, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(3000),
+    });
+    if (!response.ok) return { online: false, status: response.statusText };
+    const data = await response.json();
+    return { online: true, status: data.status || "healthy" };
+  } catch (err) {
+    return { online: false, error: err.message };
+  }
 }
 
 export const getDashboardSummary = () =>
@@ -45,42 +68,22 @@ export const getForecast = (spillId) =>
 export const getImpact = (spillId) =>
   apiRequest(`/spills/${spillId}/impact`);
 
-export const detectSpill = (imageUrl, source, captureTime, imageBounds = null) =>
-  apiRequest("/spills/detect", {
-    method: "POST",
-    body: JSON.stringify({
-      imageUrl,
-      source,
-      captureTime,
-      imageBounds,
-    }),
-  });
+export const getReport = (spillId) =>
+  apiRequest(`/spills/${spillId}/report`);
 
-export const analyzeSpill = (spillId) =>
+export const analyzeSpill = (spillId, options = {}) =>
   apiRequest(`/spills/${spillId}/analyze`, {
     method: "POST",
     body: JSON.stringify({
-      includeForecast: true,
-      includeImpact: true,
-      aisHoursBefore: 12,
-      aisHoursAfter: 12,
+      includeForecast: options.includeForecast ?? true,
+      includeImpact: options.includeImpact ?? true,
+      aisHoursBefore: options.aisHoursBefore ?? 12,
+      aisHoursAfter: options.aisHoursAfter ?? 12,
     }),
   });
 
-export const uploadImage = async (file) => {
-  const formData = new FormData();
-  formData.append("file", file);
-
-  const response = await fetch(`${API_BASE_URL}/spills/upload`, {
+export const detectSpill = (payload) =>
+  apiRequest("/spills/detect", {
     method: "POST",
-    body: formData,
+    body: JSON.stringify(payload),
   });
-
-  const result = await response.json();
-
-  if (!response.ok || result.success === false) {
-    throw new Error(result.message || "Image upload failed");
-  }
-
-  return result;
-};

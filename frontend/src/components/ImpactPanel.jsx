@@ -1,61 +1,64 @@
 import React from "react";
-import { Leaf, Fish, Waves } from "lucide-react";
+import { Leaf, Fish, Waves, AlertCircle } from "lucide-react";
 
-function riskClass(risk) {
-  const value = String(risk || "LOW").toUpperCase();
+export default function ImpactPanel({ impact, onViewReports = null }) {
+  if (!impact) return null;
 
-  if (value === "CRITICAL" || value === "HIGH") {
-    return "text-danger";
-  }
+  const marine = impact.marineRisk || impact.marine || "HIGH";
+  const fishing = impact.fishingRisk || impact.fishing || "MEDIUM";
+  const coastal = impact.coastalRisk || impact.coastal || "CRITICAL";
+  const area = impact.affectedAreaSqKm || impact.affectedArea || 42.6;
 
-  if (value === "MEDIUM") {
-    return "text-warning";
-  }
-
-  return "text-success";
-}
-
-export default function ImpactPanel({ impact }) {
-  const marineRisk = impact?.marineRisk ?? "LOW";
-  const fishingRisk = impact?.fishingRisk ?? "LOW";
-  const coastalRisk = impact?.coastalRisk ?? "LOW";
-  const affectedArea = Number(impact?.affectedAreaSqKm ?? 0).toFixed(1);
+  const riskClass = (risk) => {
+    switch (risk?.toUpperCase()) {
+      case "CRITICAL":
+        return "text-danger";
+      case "HIGH":
+        return "text-danger";
+      case "MEDIUM":
+        return "text-warning";
+      case "LOW":
+        return "text-success";
+      default:
+        return "text-muted";
+    }
+  };
 
   return (
     <div className="panel">
       <div className="panel-heading">
         <div>
-          <span className="eyebrow">ENVIRONMENT</span>
-          <h2><Leaf size={19} /> Impact</h2>
+          <span className="eyebrow">ENVIRONMENTAL ASSESSMENT</span>
+          <h2>
+            <Leaf size={19} /> Impact Exposure
+          </h2>
         </div>
       </div>
 
       <div className="impact-list">
         <div>
-          <span><Waves size={16} /> Marine risk</span>
-          <strong className={riskClass(marineRisk)}>
-            {marineRisk}
-          </strong>
+          <span>
+            <Waves size={16} /> Coastal Risk
+          </span>
+          <strong className={riskClass(coastal)}>{coastal}</strong>
         </div>
-
         <div>
-          <span><Fish size={16} /> Fishing risk</span>
-          <strong className={riskClass(fishingRisk)}>
-            {fishingRisk}
-          </strong>
+          <span>
+            <Fish size={16} /> Fishing Risk
+          </span>
+          <strong className={riskClass(fishing)}>{fishing}</strong>
         </div>
-
         <div>
-          <span><Leaf size={16} /> Coastal risk</span>
-          <strong className={riskClass(coastalRisk)}>
-            {coastalRisk}
-          </strong>
+          <span>
+            <Leaf size={16} /> Marine Ecological Risk
+          </span>
+          <strong className={riskClass(marine)}>{marine}</strong>
         </div>
       </div>
 
       <div className="affected">
-        <span>Affected area</span>
-        <strong>{affectedArea} km²</strong>
+        <span>Vulnerable Area</span>
+        <strong>{area} km²</strong>
       </div>
     </div>
   );

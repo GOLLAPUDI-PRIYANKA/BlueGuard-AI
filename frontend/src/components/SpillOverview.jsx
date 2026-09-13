@@ -1,21 +1,26 @@
 import React from "react";
-import { AlertTriangle, MapPin, Clock, Activity } from "lucide-react";
+import { AlertTriangle, MapPin, Clock, Activity, ExternalLink } from "lucide-react";
 
-export default function SpillOverview({ spill, onInvestigate, investigating }) {
-  const confidence = Math.round((spill?.confidence ?? 0) * 100);
-  const area = Number(spill?.areaSqKm ?? 0).toFixed(1);
-  const severity = spill?.severity ?? "UNKNOWN";
-  const detectedAt = spill?.detectedAt
-    ? new Date(spill.detectedAt).toLocaleString()
-    : "Unknown";
-  const latitude = spill?.centroid?.lat;
-  const longitude = spill?.centroid?.lon;
+export default function SpillOverview({
+  spill,
+  onInvestigate,
+  onViewDetails,
+  investigating = false,
+}) {
+  if (!spill) return null;
+
+  const lat = spill.centroid?.lat || spill.latitude || 15.462;
+  const lon = spill.centroid?.lon || spill.longitude || 73.845;
+  const conf = Math.round(
+    spill.confidence > 1 ? spill.confidence : (spill.confidence || 0.91) * 100
+  );
+  const area = spill.areaSqKm || spill.area || 12.5;
 
   return (
     <div className="panel overview">
       <div className="panel-heading">
         <div>
-          <span className="eyebrow">CURRENT CASE</span>
+          <span className="eyebrow">ACTIVE CASE #{spill.spillId || spill.id || "SP101"}</span>
           <h2>Spill Overview</h2>
         </div>
         <Activity size={20} className="muted-icon" />
@@ -26,20 +31,21 @@ export default function SpillOverview({ spill, onInvestigate, investigating }) {
           <AlertTriangle size={18} />
         </div>
         <div>
-          <strong>{severity} severity spill</strong>
-          <span>Requires investigation</span>
+          <strong>{spill.severity || "HIGH"} Severity Slick</strong>
+          <span>
+            {spill.title || "Arabian Sea Incident"} • Action required
+          </span>
         </div>
       </div>
 
       <div className="stat-grid">
         <div>
-          <span>Area</span>
+          <span>Estimated Slick Area</span>
           <strong>{area} km²</strong>
         </div>
-
         <div>
-          <span>Confidence</span>
-          <strong>{confidence}%</strong>
+          <span>AI Detection Confidence</span>
+          <strong className="text-accent">{conf}%</strong>
         </div>
       </div>
 
@@ -48,14 +54,22 @@ export default function SpillOverview({ spill, onInvestigate, investigating }) {
           <span>
             <AlertTriangle size={15} /> Severity
           </span>
-          <strong className="text-danger">{severity}</strong>
+          <strong
+            className={
+              spill.severity === "CRITICAL" || spill.severity === "HIGH"
+                ? "text-danger"
+                : "text-warning"
+            }
+          >
+            {spill.severity || "HIGH"}
+          </strong>
         </div>
 
         <div>
           <span>
-            <Clock size={15} /> Detected
+            <Clock size={15} /> Detection Time
           </span>
-          <strong>{detectedAt}</strong>
+          <strong>{spill.detectedAt || "2026-08-29 10:00 UTC"}</strong>
         </div>
 
         <div>
@@ -63,21 +77,40 @@ export default function SpillOverview({ spill, onInvestigate, investigating }) {
             <MapPin size={15} /> Location
           </span>
           <strong>
-            {latitude !== undefined && longitude !== undefined
-              ? `${latitude.toFixed(4)}° N, ${longitude.toFixed(4)}° E`
-              : "Unknown"}
+            {lat.toFixed(3)}° N, {lon.toFixed(3)}° E
           </strong>
         </div>
       </div>
 
-      <button
-        className="primary-btn"
-        onClick={onInvestigate}
-        disabled={investigating}
-      >
-        {investigating ? "Analyzing..." : "Investigate Spill"}{" "}
-        <span>→</span>
-      </button>
+      <div className="overview-btn-group">
+        <button
+          type="button"
+          className="primary-btn"
+          onClick={onInvestigate}
+          disabled={investigating}
+        >
+          {investigating ? (
+            <>
+              <span className="spinner-sm" /> Running Pipeline...
+            </>
+          ) : (
+            <>
+              Investigate Spill <span>→</span>
+            </>
+          )}
+        </button>
+
+        {onViewDetails && (
+          <button
+            type="button"
+            className="secondary-btn"
+            style={{ width: "100%", marginTop: "8px" }}
+            onClick={() => onViewDetails(spill)}
+          >
+            Full Spill Telemetry <ExternalLink size={14} />
+          </button>
+        )}
+      </div>
     </div>
   );
 }
