@@ -1,0 +1,606 @@
+{
+  "description": "Small mock environmental dataset for the SIH 26143 Arabian Sea demo.",
+  "units": {
+    "wind_u": "m/s",
+    "wind_v": "m/s",
+    "current_u": "m/s",
+    "current_v": "m/s"
+  },
+  "records": [
+    {
+      "timestamp": "2026-08-28T23:40:00Z",
+      "wind_u": -3.1,
+      "wind_v": 2.0,
+      "current_u": -0.14,
+      "current_v": 0.07
+    },
+    {
+      "timestamp": "2026-08-29T00:40:00Z",
+      "wind_u": -3.1,
+      "wind_v": 2.0,
+      "current_u": -0.14,
+      "current_v": 0.07
+    },
+    {
+      "timestamp": "2026-08-29T01:40:00Z",
+      "wind_u": -3.1,
+      "wind_v": 2.0,
+      "current_u": -0.14,
+      "current_v": 0.07
+    },
+    {
+      "timestamp": "2026-08-29T02:40:00Z",
+      "wind_u": -3.1,
+      "wind_v": 2.0,
+      "current_u": -0.14,
+      "current_v": 0.07
+    },
+    {
+      "timestamp": "2026-08-29T03:40:00Z",
+      "wind_u": -3.1,
+      "wind_v": 2.0,
+      "current_u": -0.14,
+      "current_v": 0.07
+    },
+    {
+      "timestamp": "2026-08-29T04:40:00Z",
+      "wind_u": -3.1,
+      "wind_v": 2.0,
+      "current_u": -0.14,
+      "current_v": 0.07
+    },
+    {
+      "timestamp": "2026-08-29T05:40:00Z",
+      "wind_u": -3.1,
+      "wind_v": 2.0,
+      "current_u": -0.14,
+      "current_v": 0.07
+    },
+    {
+      "timestamp": "2026-08-29T06:40:00Z",
+      "wind_u": -3.1,
+      "wind_v": 2.0,
+      "current_u": -0.14,
+      "current_v": 0.07
+    },
+    {
+      "timestamp": "2026-08-29T07:40:00Z",
+      "wind_u": -3.1,
+      "wind_v": 2.0,
+      "current_u": -0.14,
+      "current_v": 0.07
+    },
+    {
+      "timestamp": "2026-08-29T08:40:00Z",
+      "wind_u": -3.1,
+      "wind_v": 2.0,
+      "current_u": -0.14,
+      "current_v": 0.07
+    },
+    {
+      "timestamp": "2026-08-29T09:40:00Z",
+      "wind_u": -3.1,
+      "wind_v": 2.0,
+      "current_u": -0.14,
+      "current_v": 0.07
+    },
+    {
+      "timestamp": "2026-08-29T10:40:00Z",
+      "wind_u": -3.1,
+      "wind_v": 2.0,
+      "current_u": -0.14,
+      "current_v": 0.07
+    },
+    {
+      "timestamp": "2026-08-29T11:40:00Z",
+      "wind_u": -3.1,
+      "wind_v": 2.0,
+      "current_u": -0.14,
+      "current_v": 0.07
+    },
+    {
+      "timestamp": "2026-08-29T00:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-29T01:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-29T02:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-29T03:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-29T04:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-29T05:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-29T06:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-29T07:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-29T08:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-29T09:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-29T10:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-29T11:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-29T12:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-29T13:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-29T14:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-29T15:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-29T16:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-29T17:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-29T18:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-29T19:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-29T20:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-29T21:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-29T22:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-29T23:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-30T00:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-30T01:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-30T02:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-30T03:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-30T04:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-30T05:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-30T06:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-30T07:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-30T08:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-30T09:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-30T10:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-30T11:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-30T12:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-30T13:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-30T14:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-30T15:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-30T16:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-30T17:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-30T18:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-30T19:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-30T20:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-30T21:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-30T22:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-30T23:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-31T00:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-31T01:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-31T02:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-31T03:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-31T04:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-31T05:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-31T06:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-31T07:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-31T08:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-31T09:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-31T10:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-31T11:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-31T12:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-31T13:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-31T14:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-31T15:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-31T16:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-31T17:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-31T18:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-31T19:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-31T20:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-31T21:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-31T22:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    },
+    {
+      "timestamp": "2026-08-31T23:40:00Z",
+      "wind_u": -3.0,
+      "wind_v": 2.1,
+      "current_u": -0.14,
+      "current_v": 0.08
+    }
+  ]
+}

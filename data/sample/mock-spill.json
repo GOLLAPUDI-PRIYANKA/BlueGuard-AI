@@ -1,0 +1,17 @@
+{
+  "success": true,
+  "data": {
+    "spillId": "SPILL-001",
+    "detectionId": "DET-001",
+    "analysisId": "ANALYSIS-001",
+    "status": "detected",
+    "confidence": 0.91,
+    "severity": "high",
+    "areaKm2": 12.5,
+    "centroid": {
+      "latitude": 12.3456,
+      "longitude": 80.1234
+    }
+  },
+  "message": "Mock oil spill detection created"
+}

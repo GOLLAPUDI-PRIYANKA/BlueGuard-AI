@@ -13,6 +13,9 @@ logger = setup_logging()
 settings = get_settings()
 
 
+logger = setup_logging()
+settings = get_settings()
+
 app = FastAPI(
     title="BlueGuard AI — Marine Oil Spill Detection Backend",
     description=(
@@ -78,8 +81,10 @@ async def root():
         "status": "ok",
         "service": "BlueGuard AI Backend"
     }
+    return {"status": "ok", "service": "BlueGuard AI Backend"}
 
 
 @app.get("/health", tags=["health"])
 async def health():
+    return {"status": "healthy"}
     return {"status": "healthy"}
