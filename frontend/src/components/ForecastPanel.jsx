@@ -1,7 +1,7 @@
 import React from "react";
 import { CloudSun } from "lucide-react";
 
-export default function ForecastPanel({ forecast }) {
+export default function ForecastPanel({ forecast = [] }) {
   return (
     <div className="panel">
       <div className="panel-heading">
@@ -13,12 +13,26 @@ export default function ForecastPanel({ forecast }) {
       </div>
 
       <div className="forecast-list">
-        {forecast.map((item, index) => (
-          <div className={`forecast-item f${index}`} key={item.hours}>
-            <div className="forecast-hour">{item.hours}h</div>
-            <div><strong>Predicted spread</strong><span>Estimated area: {item.area} km²</span></div>
-          </div>
-        ))}
+        {forecast.length === 0 ? (
+          <div className="empty-state">No forecast data available.</div>
+        ) : (
+          forecast.map((item, index) => (
+            <div
+              className={`forecast-item f${index}`}
+              key={item.hours}
+            >
+              <div className="forecast-hour">{item.hours}h</div>
+
+              <div>
+                <strong>Predicted spread</strong>
+                <span>
+                  Estimated area:{" "}
+                  {Number(item.areaSqKm ?? 0).toFixed(1)} km²
+                </span>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
