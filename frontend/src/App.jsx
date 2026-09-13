@@ -11,53 +11,194 @@ import ImpactPanel from "./components/ImpactPanel";
 import ActivityPanel from "./components/ActivityPanel";
 
 import {
-  spillData as mockSpill,
-  vessels as mockVessels,
-  originData as mockOrigin,
-  forecastData as mockForecast,
-  impactData as mockImpact,
-} from "./data/mockData";
+  uploadImage,
+  detectSpill,
+  analyzeSpill,
+  getSpill,
+  getOrigin,
+  getSuspects,
+  getForecast,
+  getImpact,
+  getVesselTrajectory,
+} from "./services/api";
 
 import "./App.css";
 
 export default function App() {
   const [active, setActive] = useState("dashboard");
+
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [spill, setSpill] = useState(null);
+  const [origin, setOrigin] = useState(null);
+  const [vessels, setVessels] = useState([]);
+  const [forecast, setForecast] = useState([]);
+  const [impact, setImpact] = useState(null);
+  const [trajectories, setTrajectories] = useState({});
+
+  const [loading, setLoading] = useState(false);
   const [investigating, setInvestigating] = useState(false);
+  const [apiError, setApiError] = useState("");
+  const [status, setStatus] = useState("Select a satellite image");
 
-  // --------------------------------------------------
-  // DEMO MODE
-  // --------------------------------------------------
-  // PostgreSQL is not available yet, so the dashboard
-  // currently uses the frontend mock data.
-  //
-  // Later, when M5 backend + PostgreSQL are ready,
-  // we can enable the API integration again.
-  // --------------------------------------------------
+  const handleFileChange = (event) => {
+    const file = event.target.files?.[0];
 
-  const [spill] = useState(mockSpill);
-  const [vessels] = useState(mockVessels);
-  const [origin] = useState(mockOrigin);
-  const [forecast] = useState(mockForecast);
-  const [impact] = useState(mockImpact);
+    if (!file) {
+      setSelectedFile(null);
+      setStatus("Select a satellite image");
+      return;
+    }
 
-  const loading = false;
-  const apiError = "";
+    const extension = file.name.split(".").pop()?.toLowerCase();
 
-  // --------------------------------------------------
-  // INVESTIGATION BUTTON
-  // --------------------------------------------------
+    const allowedExtensions = [
+      "png",
+      "jpg",
+      "jpeg",
+      "tif",
+      "tiff",
+    ];
 
-  const handleInvestigate = () => {
-    setInvestigating(true);
+    if (!allowedExtensions.includes(extension)) {
+      setSelectedFile(null);
+      setApiError(
+        "Unsupported image format. Please select PNG, JPG, JPEG or TIFF."
+      );
+      setStatus("Invalid image");
+      return;
+    }
 
-    setTimeout(() => {
-      setInvestigating(false);
-    }, 1800);
+    setApiError("");
+    setSelectedFile(file);
+    setStatus(`Selected: ${file.name}`);
   };
 
-  // --------------------------------------------------
-  // DASHBOARD
-  // --------------------------------------------------
+  const handleDetect = async () => {
+    if (!selectedFile) {
+      setApiError("Please select a satellite image first.");
+      return;
+    }
+
+    setLoading(true);
+    setApiError("");
+    setStatus("Uploading image...");
+
+    try {
+      const uploadResult = await uploadImage(selectedFile);
+      const imageUrl = uploadResult?.data?.imageUrl;
+
+      if (!imageUrl) {
+        throw new Error("Upload succeeded but no image path was returned.");
+      }
+
+      setStatus("Running AI detection...");
+
+      const detectResult = await detectSpill(
+        imageUrl,
+        "SENTINEL_1",
+        new Date().toISOString()
+      );
+
+      const detectedSpill = detectResult?.data;
+
+      if (!detectedSpill?.spillId) {
+        throw new Error("Detection did not return a spill ID.");
+      }
+
+      const spillResult = await getSpill(detectedSpill.spillId);
+
+      const actualSpill = spillResult?.data || {
+        spillId: detectedSpill.spillId,
+        areaSqKm: detectedSpill.areaSqKm,
+        severity: detectedSpill.severity,
+        confidence: detectedSpill.confidence,
+        detectedAt: new Date().toISOString(),
+        centroid: detectedSpill.centroid,
+      };
+
+      setSpill(actualSpill);
+      setOrigin(null);
+      setVessels([]);
+      setForecast([]);
+      setImpact(null);
+      setTrajectories({});
+
+      setStatus(
+        detectedSpill.detected
+          ? `Spill detected: ${detectedSpill.spillId}`
+          : `No spill detected: ${detectedSpill.spillId}`
+      );
+    } catch (error) {
+      setApiError(error.message || "Detection failed.");
+      setStatus("Detection failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInvestigate = async () => {
+    if (!spill?.spillId) {
+      setApiError("Detect a spill before starting the investigation.");
+      return;
+    }
+
+    setInvestigating(true);
+    setApiError("");
+    setStatus("Running investigation...");
+
+    try {
+      await analyzeSpill(spill.spillId);
+
+      setStatus("Loading investigation results...");
+
+      const [
+        spillResult,
+        originResult,
+        suspectsResult,
+        forecastResult,
+        impactResult,
+      ] = await Promise.all([
+        getSpill(spill.spillId),
+        getOrigin(spill.spillId),
+        getSuspects(spill.spillId),
+        getForecast(spill.spillId),
+        getImpact(spill.spillId),
+      ]);
+
+      const updatedSpill = spillResult?.data;
+      const updatedOrigin = originResult?.data;
+      const updatedSuspects = suspectsResult?.data?.suspects || [];
+      const updatedForecast = forecastResult?.data?.forecast || [];
+      const updatedImpact = impactResult?.data;
+
+      setSpill(updatedSpill || spill);
+      setOrigin(updatedOrigin || null);
+      setVessels(updatedSuspects);
+      setForecast(updatedForecast);
+      setImpact(updatedImpact);
+
+      setStatus("Loading AIS trajectories...");
+
+      const trajectoryEntries = await Promise.all(
+        updatedSuspects.map(async (vessel) => {
+          try {
+            const result = await getVesselTrajectory(vessel.vesselId);
+            return [vessel.vesselId, result?.data || null];
+          } catch {
+            return [vessel.vesselId, null];
+          }
+        })
+      );
+
+      setTrajectories(Object.fromEntries(trajectoryEntries));
+      setStatus("Investigation complete");
+    } catch (error) {
+      setApiError(error.message || "Investigation failed.");
+      setStatus("Investigation failed");
+    } finally {
+      setInvestigating(false);
+    }
+  };
 
   return (
     <div className="app">
@@ -71,114 +212,84 @@ export default function App() {
 
         {active === "dashboard" ? (
           <>
-            {/* ---------------------------------------- */}
-            {/* TOOLBAR */}
-            {/* ---------------------------------------- */}
-
             <div className="toolbar">
               <select defaultValue="sentinel">
-                <option value="sentinel">
-                  Sentinel-1 SAR
-                </option>
-
-                <option value="satellite">
-                  Satellite Scene
-                </option>
+                <option value="sentinel">Sentinel-1 SAR</option>
+                <option value="satellite">Satellite Scene</option>
               </select>
 
-              <select defaultValue="date">
-                <option value="date">
-                  09 Sep 2026 • 12:00 UTC
-                </option>
+              <label className="primary-btn upload-btn">
+                Select Image
+                <input
+                  type="file"
+                  accept=".png,.jpg,.jpeg,.tif,.tiff,image/png,image/jpeg,image/tiff"
+                  onChange={handleFileChange}
+                  hidden
+                />
+              </label>
 
-                <option>
-                  08 Sep 2026 • 12:00 UTC
-                </option>
-              </select>
+              <button
+                className="primary-btn"
+                onClick={handleDetect}
+                disabled={loading || investigating || !selectedFile}
+              >
+                {loading ? "Detecting..." : "Detect Spill"}
+              </button>
 
               <div className="toolbar-status">
                 <span />
-
-                {loading
-                  ? "Loading..."
-                  : "Demo data"}
+                {status}
               </div>
             </div>
 
-            {/* ---------------------------------------- */}
-            {/* MAIN DASHBOARD */}
-            {/* ---------------------------------------- */}
+            {apiError && (
+              <div className="panel error-panel">
+                {apiError}
+              </div>
+            )}
 
-            <section className="hero-grid">
+            {spill ? (
+              <>
+                <section className="hero-grid">
+                  <MapView
+                    spill={spill}
+                    origin={origin}
+                    vessels={vessels}
+                    trajectories={trajectories}
+                  />
 
-              {/* GIS MAP */}
-              <MapView
-                spill={spill}
-                origin={origin}
-                vessels={vessels}
-              />
+                  <SpillOverview
+                    spill={spill}
+                    onInvestigate={handleInvestigate}
+                    investigating={investigating}
+                  />
+                </section>
 
-              {/* SPILL OVERVIEW */}
-              <SpillOverview
-                spill={spill}
-                onInvestigate={handleInvestigate}
-              />
+                <section className="dashboard-grid">
+                  <VesselList vessels={vessels} />
 
-            </section>
+                  <OriginPanel origin={origin} />
 
-            {/* ---------------------------------------- */}
-            {/* DASHBOARD PANELS */}
-            {/* ---------------------------------------- */}
+                  <ForecastPanel forecast={forecast} />
 
-            <section className="dashboard-grid">
+                  <ImpactPanel impact={impact} />
 
-              {/* VESSEL LIST */}
-              <VesselList
-                vessels={vessels}
-              />
-
-              {/* ORIGIN */}
-              <OriginPanel
-                origin={origin}
-              />
-
-              {/* FORECAST */}
-              <ForecastPanel
-                forecast={forecast}
-              />
-
-              {/* IMPACT */}
-              <ImpactPanel
-                impact={impact}
-              />
-
-              {/* ACTIVITY */}
-              <ActivityPanel />
-
-            </section>
-
-            {/* ---------------------------------------- */}
-            {/* INVESTIGATION NOTIFICATION */}
-            {/* ---------------------------------------- */}
-
-            {investigating && (
-              <div className="toast">
-                <div className="spinner" />
-
-                Investigation workflow started...
+                  <ActivityPanel />
+                </section>
+              </>
+            ) : (
+              <div className="panel empty-page">
+                <div className="empty-icon">◈</div>
+                <h2>Satellite Analysis</h2>
+                <p>
+                  Select a supported satellite image and start detection.
+                </p>
               </div>
             )}
           </>
         ) : (
-          /* ------------------------------------------ */
-          /* OTHER SIDEBAR PAGES */
-          /* ------------------------------------------ */
-
           <div className="empty-page panel">
-
-            <div className="empty-icon">
-              ◈
-            </div>
+            <div className="empty-icon">◈</div>
 
             <h2>
               {active.charAt(0).toUpperCase() +
@@ -195,7 +306,6 @@ export default function App() {
             >
               Back to Dashboard
             </button>
-
           </div>
         )}
       </main>
