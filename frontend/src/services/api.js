@@ -45,6 +45,17 @@ export const getForecast = (spillId) =>
 export const getImpact = (spillId) =>
   apiRequest(`/spills/${spillId}/impact`);
 
+export const detectSpill = (imageUrl, source, captureTime, imageBounds = null) =>
+  apiRequest("/spills/detect", {
+    method: "POST",
+    body: JSON.stringify({
+      imageUrl,
+      source,
+      captureTime,
+      imageBounds,
+    }),
+  });
+
 export const analyzeSpill = (spillId) =>
   apiRequest(`/spills/${spillId}/analyze`, {
     method: "POST",
