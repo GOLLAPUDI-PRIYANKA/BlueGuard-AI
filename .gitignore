@@ -38,9 +38,11 @@ Thumbs.db
 data/satellite/*
 data/ais/*
 data/environmental/*
+data/uploads/*
 !data/satellite/.gitkeep
 !data/ais/.gitkeep
 !data/environmental/.gitkeep
+!data/uploads/.gitkeep
 
 # Generated outputs
 outputs/
