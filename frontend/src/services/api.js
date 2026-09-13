@@ -55,3 +55,21 @@ export const analyzeSpill = (spillId) =>
       aisHoursAfter: 12,
     }),
   });
+
+export const uploadImage = async (file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`${API_BASE_URL}/spills/upload`, {
+    method: "POST",
+    body: formData,
+  });
+
+  const result = await response.json();
+
+  if (!response.ok || result.success === false) {
+    throw new Error(result.message || "Image upload failed");
+  }
+
+  return result;
+};
