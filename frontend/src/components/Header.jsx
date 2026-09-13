@@ -1,25 +1,54 @@
 import React from "react";
-import { Bell, Search } from "lucide-react";
+import { Bell, Search, ShieldCheck, Activity } from "lucide-react";
 
 export default function Header() {
   return (
     <header className="header">
-      <div>
-        <div className="breadcrumb">Marine Intelligence / Investigation</div>
-        <h1>Oil Spill Investigation Dashboard</h1>
+      <div className="header-left">
+        <div className="breadcrumb">
+          BlueGuard / Marine Intelligence / Investigation
+        </div>
+
+        <div className="title-row">
+          <div className="title-icon">
+            <ShieldCheck size={22} />
+          </div>
+
+          <div>
+            <h1>Oil Spill Investigation Dashboard</h1>
+            <p>
+              AI-powered detection, backtracking & vessel attribution
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="header-actions">
+        <div className="system-status">
+          <span className="status-dot"></span>
+          <Activity size={15} />
+          System Operational
+        </div>
+
         <div className="search-box">
           <Search size={17} />
-          <input placeholder="Search spill or vessel..." />
+          <input
+            type="text"
+            placeholder="Search spill or vessel..."
+          />
         </div>
-        <button className="icon-btn"><Bell size={19} /><span className="notification-dot" /></button>
+
+        <button className="icon-btn" title="Notifications">
+          <Bell size={19} />
+          <span className="notification-dot"></span>
+        </button>
+
         <div className="user">
           <div className="avatar">I</div>
+
           <div>
             <strong>Investigator</strong>
-            <span>Analyst</span>
+            <span>Marine Analyst</span>
           </div>
         </div>
       </div>
