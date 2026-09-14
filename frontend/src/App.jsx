@@ -36,6 +36,8 @@ import {
   checkBackendHealth,
   getDashboardSummary,
   analyzeSpill,
+  uploadImage,
+  detectSpill,
 } from "./services/api";
 
 import "./App.css";
@@ -49,6 +51,9 @@ export default function App() {
   const [backendOnline, setBackendOnline] = useState(false);
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState("");
+  const [selectedFile, setSelectedFile] = useState(null);
+const [detecting, setDetecting] = useState(false);
+const [detectionResult, setDetectionResult] = useState(null);
 
   // Domain Data State
   const [spills, setSpills] = useState(TEAM_SCENARIO_SPILLS);
@@ -117,6 +122,105 @@ export default function App() {
     );
   }, [spills, selectedSpillId]);
 
+  const handleImageSelect = (event) => {
+  const file = event.target.files?.[0];
+
+  if (!file) return;
+
+  const allowedExtensions = [
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".tif",
+    ".tiff",
+  ];
+
+  const extension = file.name
+    .substring(file.name.lastIndexOf("."))
+    .toLowerCase();
+
+  if (!allowedExtensions.includes(extension)) {
+    setSelectedFile(null);
+    setApiError(
+      "Unsupported image format. Please select PNG, JPG, JPEG or TIFF."
+    );
+    return;
+  }
+
+  setSelectedFile(file);
+  setDetectionResult(null);
+  setApiError("");
+};
+
+  const handleDetectSpill = async () => {
+  if (!selectedFile) {
+    setApiError("Please select a satellite image first.");
+    return;
+  }
+
+  setDetecting(true);
+  setApiError("");
+  setDetectionResult(null);
+
+  try {
+    // Upload image
+    const uploadResult = await uploadImage(selectedFile);
+
+    const imageUrl = uploadResult?.data?.imageUrl;
+
+    if (!imageUrl) {
+      throw new Error("Image upload succeeded but no image path was returned.");
+    }
+
+    // Send image to AI detection
+    const detectResult = await detectSpill({
+      imageUrl,
+      source: "SENTINEL_1",
+      captureTime: new Date(
+        selectedFile.lastModified || Date.now()
+      ).toISOString(),
+    });
+
+    const detected = detectResult?.data;
+
+    if (!detected) {
+      throw new Error("Detection completed but no result was returned.");
+    }
+
+    setDetectionResult(detected);
+
+    const newSpill = {
+      spillId: detected.spillId,
+      detected: detected.detected,
+      confidence: detected.confidence,
+      areaSqKm: detected.areaSqKm,
+      severity: detected.severity,
+      centroid: detected.centroid,
+      title: selectedFile.name,
+      detectedAt: new Date().toISOString(),
+    };
+
+    setSpills((previous) => [
+      newSpill,
+      ...previous.filter(
+        (spill) =>
+          (spill.spillId || spill.id) !== detected.spillId
+      ),
+    ]);
+
+    setSelectedSpillId(detected.spillId);
+    setIsDemoMode(false);
+  } catch (error) {
+    console.error("Spill detection failed:", error);
+
+    setApiError(
+      error.message ||
+        "Spill detection failed. Please check the backend and AI service."
+    );
+  } finally {
+    setDetecting(false);
+  }
+};
   // Execute Attribution & Investigation Workflow
   const handleInvestigate = async () => {
     setInvestigating(true);
@@ -203,31 +307,65 @@ export default function App() {
           <>
             {/* Toolbar */}
             <div className="toolbar">
-              <select defaultValue="sentinel">
-                <option value="sentinel">Sentinel-1 SAR IW (VV+VH)</option>
-                <option value="sentinel2">Sentinel-2 Optical (MSI)</option>
-                <option value="landsat">Landsat-8/9 OLI</option>
-              </select>
 
-              <select defaultValue="scene1">
-                <option value="scene1">2026-08-29 10:00 UTC (Active Incident)</option>
-                <option value="scene2">2026-08-28 23:40 UTC (Backtracked Origin)</option>
-                <option value="scene3">2026-08-20 06:15 UTC (Historical Reference)</option>
-              </select>
+  <select defaultValue="sentinel">
+    <option value="sentinel">
+      Sentinel-1 SAR IW (VV+VH)
+    </option>
 
-              <div className="toolbar-status">
-                <span
-                  style={{
-                    backgroundColor: isDemoMode ? "#ff9f43" : "#2ed573",
-                  }}
-                />
-                {loading
-                  ? "Contacting Backend API..."
-                  : isDemoMode
-                  ? "SIH Benchmark Mode (Arabian Sea)"
-                  : "Live Backend API Connected"}
-              </div>
-            </div>
+    <option value="sentinel2">
+      Sentinel-2 Optical (MSI)
+    </option>
+
+    <option value="landsat">
+      Landsat-8/9 OLI
+    </option>
+  </select>
+
+  <label className="image-upload">
+    <input
+      type="file"
+      accept=".png,.jpg,.jpeg,.tif,.tiff"
+      onChange={handleImageSelect}
+    />
+
+    <span>
+      {selectedFile
+        ? selectedFile.name
+        : "Select Image"}
+    </span>
+  </label>
+
+  <button
+    type="button"
+    className="detect-button"
+    onClick={handleDetectSpill}
+    disabled={!selectedFile || detecting}
+  >
+    {detecting
+      ? "Detecting Spill..."
+      : "Detect Spill"}
+  </button>
+
+  <div className="toolbar-status">
+    <span
+      style={{
+        backgroundColor: detecting
+          ? "#ff9f43"
+          : backendOnline
+          ? "#2ed573"
+          : "#ff4757",
+      }}
+    />
+
+    {detecting
+      ? "AI Detection Running..."
+      : backendOnline
+      ? "Backend Connected"
+      : "Backend Offline"}
+  </div>
+
+</div>
 
             {/* Hero Grid: GIS Map + Spill Overview */}
             <section className="hero-grid">
