@@ -84,7 +84,7 @@ export default function Header({
         </button>
 
         <div className="user">
-          <div className="avatar">M6</div>
+          <div className="avatar">MI</div>
           <div>
             <strong>MI</strong>
             <span>Marine Investigator</span>
