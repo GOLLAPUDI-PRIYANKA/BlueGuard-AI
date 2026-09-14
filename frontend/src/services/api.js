@@ -34,7 +34,6 @@ export async function checkBackendHealth() {
       headers: {
         Accept: "application/json",
       },
-      signal: AbortSignal.timeout(3000),
     });
 
     if (!response.ok) {
@@ -60,16 +59,12 @@ export async function checkBackendHealth() {
 
 export async function uploadImage(file) {
   const formData = new FormData();
-
   formData.append("file", file);
 
-  const response = await fetch(
-    `${API_BASE_URL}/spills/upload`,
-    {
-      method: "POST",
-      body: formData,
-    }
-  );
+  const response = await fetch(`${API_BASE_URL}/spills/upload`, {
+    method: "POST",
+    body: formData,
+  });
 
   const result = await response.json();
 
@@ -87,39 +82,10 @@ export async function uploadImage(file) {
 export const getDashboardSummary = () =>
   apiRequest("/dashboard/summary");
 
-export const getSpill = (spillId) =>
-  apiRequest(`/spills/${spillId}`);
-
-export const getNearbyVessels = (spillId) =>
-  apiRequest(`/spills/${spillId}/nearby-vessels`);
-
-export const getVesselTrajectory = (vesselId) =>
-  apiRequest(`/vessels/${vesselId}/trajectory`);
-
-export const getOrigin = (spillId) =>
-  apiRequest(`/spills/${spillId}/origin`);
-
-export const getSuspects = (spillId) =>
-  apiRequest(`/spills/${spillId}/suspects`);
-
-export const getForecast = (spillId) =>
-  apiRequest(`/spills/${spillId}/forecast`);
-
-export const getImpact = (spillId) =>
-  apiRequest(`/spills/${spillId}/impact`);
-
-export const getReport = (spillId) =>
-  apiRequest(`/spills/${spillId}/report`);
-
-export const analyzeSpill = (spillId, options = {}) =>
-  apiRequest(`/spills/${spillId}/analyze`, {
+export const analyzeSpill = (payload) =>
+  apiRequest("/spills/analyze", {
     method: "POST",
-    body: JSON.stringify({
-      includeForecast: options.includeForecast ?? true,
-      includeImpact: options.includeImpact ?? true,
-      aisHoursBefore: options.aisHoursBefore ?? 12,
-      aisHoursAfter: options.aisHoursAfter ?? 12,
-    }),
+    body: JSON.stringify(payload),
   });
 
 export const detectSpill = (payload) =>
@@ -127,3 +93,27 @@ export const detectSpill = (payload) =>
     method: "POST",
     body: JSON.stringify(payload),
   });
+
+export const getSpills = () =>
+  apiRequest("/spills");
+
+export const getSpill = (id) =>
+  apiRequest(`/spills/${id}`);
+
+export const getVessels = () =>
+  apiRequest("/vessels");
+
+export const getForecast = (spillId) =>
+  apiRequest(`/forecast/${spillId}`);
+
+export const getImpact = (spillId) =>
+  apiRequest(`/impact/${spillId}`);
+
+export const getOrigin = (spillId) =>
+  apiRequest(`/origin/${spillId}`);
+
+export const getReports = () =>
+  apiRequest("/reports");
+
+export const getSettings = () =>
+  apiRequest("/settings");
