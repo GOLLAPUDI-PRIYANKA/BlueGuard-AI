@@ -86,8 +86,8 @@ export default function Header({
         <div className="user">
           <div className="avatar">M6</div>
           <div>
-            <strong>Member 6</strong>
-            <span>Frontend & GIS</span>
+            <strong>MI</strong>
+            <span>Marine Investigator</span>
           </div>
         </div>
       </div>
