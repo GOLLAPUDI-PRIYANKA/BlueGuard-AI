@@ -29,25 +29,16 @@ async function apiRequest(endpoint, options = {}) {
 
 export async function checkBackendHealth() {
   try {
-    const response = await fetch("/health", {
+    const response = await fetch(`${API_BASE_URL}/dashboard/summary`, {
       method: "GET",
       headers: {
         Accept: "application/json",
       },
     });
 
-    if (!response.ok) {
-      return {
-        online: false,
-        status: response.statusText,
-      };
-    }
-
-    const data = await response.json();
-
     return {
-      online: true,
-      status: data.status || "healthy",
+      online: response.ok,
+      status: response.ok ? "healthy" : "offline",
     };
   } catch (err) {
     return {
