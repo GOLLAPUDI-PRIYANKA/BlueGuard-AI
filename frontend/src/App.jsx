@@ -85,8 +85,8 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    checkStatus();
-  }, [checkStatus]);
+  setBackendOnline(false);
+}, []);
 
   // Handle toggling between Demo Mode and Live Backend
   const handleToggleDemoMode = async (enableDemo) => {
