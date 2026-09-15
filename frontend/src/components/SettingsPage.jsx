@@ -259,7 +259,7 @@ export default function SettingsPage({
                 </tr>
                 <tr>
                   <td>React GIS Dashboard</td>
-                  <td>Member 6</td>
+                  <td>Investigator</td>
                   <td><code>5173</code></td>
                   <td>Frontend Dashboard</td>
                 </tr>

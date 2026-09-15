@@ -21,16 +21,6 @@ import ReportsPage from "./components/ReportsPage";
 import SettingsPage from "./components/SettingsPage";
 import SpillDetailsModal from "./components/SpillDetailsModal";
 
-// Team Verified Scenario Data
-import {
-  TEAM_SCENARIO_SPILLS,
-  TEAM_SCENARIO_ORIGIN,
-  TEAM_SCENARIO_SUSPECTS,
-  TEAM_SCENARIO_FORECAST,
-  TEAM_SCENARIO_IMPACT,
-  TEAM_SCENARIO_SUMMARY,
-} from "./data/teamScenarioData";
-
 // Centralized API Service Client
 import {
   checkBackendHealth,
@@ -38,6 +28,11 @@ import {
   analyzeSpill,
   uploadImage,
   detectSpill,
+  getOrigin,
+  getSuspects,
+  getForecast,
+  getImpact,
+  getVesselTrajectory,
 } from "./services/api";
 
 import "./App.css";
@@ -47,7 +42,7 @@ export default function App() {
   const [active, setActive] = useState("dashboard");
 
   // Operational Mode & Backend State
-  const [isDemoMode, setIsDemoMode] = useState(true);
+  const [isDemoMode, setIsDemoMode] = useState(false);
   const [backendOnline, setBackendOnline] = useState(false);
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState("");
@@ -58,15 +53,20 @@ export default function App() {
   const [detectionResult, setDetectionResult] = useState(null);
 
   // Domain Data State
-  const [spills, setSpills] = useState(TEAM_SCENARIO_SPILLS);
-  const [selectedSpillId, setSelectedSpillId] = useState("SP101");
-  const [origin, setOrigin] = useState(TEAM_SCENARIO_ORIGIN);
-  const [suspects, setSuspects] = useState(TEAM_SCENARIO_SUSPECTS);
+  const [spills, setSpills] = useState([]);
+  const [selectedSpillId, setSelectedSpillId] = useState(null);
+  const [origin, setOrigin] = useState(null);
+  const [suspects, setSuspects] = useState([]);
   const [selectedVesselId, setSelectedVesselId] =
-    useState("VES123456789");
-  const [forecast, setForecast] = useState(TEAM_SCENARIO_FORECAST);
-  const [impact, setImpact] = useState(TEAM_SCENARIO_IMPACT);
-  const [summary, setSummary] = useState(TEAM_SCENARIO_SUMMARY);
+    useState(null);
+  const [forecast, setForecast] = useState([]);
+  const [impact, setImpact] = useState(null);
+  const [summary, setSummary] = useState({
+    totalSpills: 0,
+    activeSpills: 0,
+    criticalSpills: 0,
+    vesselsUnderInvestigation: 0,
+  });
 
   // Investigation Workflow & Modal State
   const [investigating, setInvestigating] = useState(false);
@@ -85,49 +85,156 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-  checkStatus();
-}, [checkStatus]);
+    checkStatus();
+  }, [checkStatus]);
+
+  useEffect(() => {
+    const loadSummary = async () => {
+      try {
+        const summaryData = await getDashboardSummary();
+        if (summaryData?.data) {
+          setSummary(summaryData.data);
+        }
+      } catch {
+        setSummary({
+          totalSpills: 0,
+          activeSpills: 0,
+          criticalSpills: 0,
+          vesselsUnderInvestigation: 0,
+        });
+      }
+    };
+
+    loadSummary();
+  }, []);
+
+  const getGeoJsonCenter = (geometry) => {
+    const points = [];
+
+    const collectPoints = (coords) => {
+      if (!Array.isArray(coords)) return;
+
+      if (
+        coords.length >= 2 &&
+        typeof coords[0] === "number" &&
+        typeof coords[1] === "number"
+      ) {
+        points.push({ lon: coords[0], lat: coords[1] });
+        return;
+      }
+
+      coords.forEach(collectPoints);
+    };
+
+    collectPoints(geometry?.coordinates);
+
+    if (points.length === 0) return null;
+
+    const bounds = points.reduce(
+      (acc, point) => ({
+        south: Math.min(acc.south, point.lat),
+        north: Math.max(acc.north, point.lat),
+        west: Math.min(acc.west, point.lon),
+        east: Math.max(acc.east, point.lon),
+      }),
+      {
+        south: points[0].lat,
+        north: points[0].lat,
+        west: points[0].lon,
+        east: points[0].lon,
+      }
+    );
+
+    return {
+      lat: (bounds.south + bounds.north) / 2,
+      lon: (bounds.west + bounds.east) / 2,
+    };
+  };
+
+  const normalizeForecast = (forecastData) => {
+    const entries = forecastData?.forecast || [];
+
+    return entries.map((entry) => {
+      const center = getGeoJsonCenter(entry.geometry);
+
+      return {
+        ...entry,
+        lat: center?.lat,
+        lon: center?.lon,
+      };
+    });
+  };
+
+  const hydrateSuspectTrajectories = async (suspectData) => {
+    const vessels = suspectData?.suspects || [];
+
+    // Suspects now include trajectory directly from the backend.
+    // Still attempt the dedicated trajectory endpoint to get the full
+    // historical path — merge it in, falling back to the embedded trajectory.
+    return Promise.all(
+      vessels.map(async (vessel) => {
+        try {
+          const trajectoryResult = await getVesselTrajectory(vessel.vesselId);
+          const path = trajectoryResult?.data?.path || [];
+          // Use the richer trajectory if available, otherwise use what came with suspects
+          return {
+            ...vessel,
+            trajectory: path.length > 0 ? path : (vessel.trajectory || []),
+          };
+        } catch {
+          // Vessel might not have DB positions yet — use embedded trajectory
+          return vessel;
+        }
+      })
+    );
+  };
+
+  const loadInvestigationResults = async (spillId) => {
+    const [originResult, suspectsResult, forecastResult, impactResult] =
+      await Promise.all([
+        getOrigin(spillId),
+        getSuspects(spillId),
+        getForecast(spillId),
+        getImpact(spillId),
+      ]);
+
+    const liveSuspects = await hydrateSuspectTrajectories(
+      suspectsResult?.data
+    );
+
+    setOrigin(originResult?.data || null);
+    setSuspects(liveSuspects);
+    setForecast(normalizeForecast(forecastResult?.data));
+    setImpact(impactResult?.data || null);
+    setSelectedVesselId(liveSuspects[0]?.vesselId || null);
+  };
 
   // Handle toggling between Demo Mode and Live Backend
   const handleToggleDemoMode = async (enableDemo) => {
-    setIsDemoMode(enableDemo);
+    if (enableDemo) return;
 
-    if (enableDemo) {
-      setSpills(TEAM_SCENARIO_SPILLS);
-      setOrigin(TEAM_SCENARIO_ORIGIN);
-      setSuspects(TEAM_SCENARIO_SUSPECTS);
-      setForecast(TEAM_SCENARIO_FORECAST);
-      setImpact(TEAM_SCENARIO_IMPACT);
-      setSummary(TEAM_SCENARIO_SUMMARY);
-      setApiError("");
-    } else {
-      setLoading(true);
-      setApiError("");
+    setIsDemoMode(false);
+    setLoading(true);
+    setApiError("");
 
-      try {
-        const summaryData = await getDashboardSummary();
+    try {
+      const summaryData = await getDashboardSummary();
 
-        if (summaryData && summaryData.data) {
-          setSummary(summaryData.data);
-        }
-      } catch (err) {
-        setApiError(
-          "Backend API reached, but database tables are not initialized. Reverting to Arabian Sea scenario."
-        );
-        setIsDemoMode(true);
-      } finally {
-        setLoading(false);
+      if (summaryData?.data) {
+        setSummary(summaryData.data);
       }
+    } catch (err) {
+      setApiError(
+        "Live backend data is unavailable. Start the backend and required AI/AIS/GIS services, then test the connection again."
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
   // Derive Current Active Spill
   const currentSpill = useMemo(() => {
-    return (
-      spills.find(
-        (s) => (s.spillId || s.id) === selectedSpillId
-      ) || spills[0]
-    );
+    return spills.find((s) => (s.spillId || s.id) === selectedSpillId);
   }, [spills, selectedSpillId]);
 
   // Handle Image Selection
@@ -177,6 +284,11 @@ export default function App() {
     setDetecting(true);
     setApiError("");
     setDetectionResult(null);
+    setOrigin(null);
+    setSuspects([]);
+    setForecast([]);
+    setImpact(null);
+    setSelectedVesselId(null);
 
     try {
       // Upload image
@@ -234,8 +346,21 @@ export default function App() {
       // Select detected spill
       setSelectedSpillId(detected.spillId);
 
-      // Switch from demo mode
+      // Switch to live backend state
       setIsDemoMode(false);
+
+      if (detected.detected) {
+        setInvestigating(true);
+        setInvestigationStep(
+          "Running backend AI, GIS, AIS, attribution, forecast, and impact services..."
+        );
+
+        await analyzeSpill(detected.spillId, {
+          includeForecast: true,
+          includeImpact: true,
+        });
+        await loadInvestigationResults(detected.spillId);
+      }
     } catch (error) {
       console.error("Spill detection failed:", error);
 
@@ -245,11 +370,18 @@ export default function App() {
       );
     } finally {
       setDetecting(false);
+      setInvestigating(false);
+      setInvestigationStep("");
     }
   };
 
   // Execute Attribution & Investigation Workflow
   const handleInvestigate = async () => {
+    if (!currentSpill?.spillId) {
+      setApiError("Upload and detect a spill before running investigation.");
+      return;
+    }
+
     setInvestigating(true);
 
     setInvestigationStep(
@@ -269,14 +401,17 @@ export default function App() {
     }, 1600);
 
     setTimeout(async () => {
-      if (!isDemoMode && backendOnline) {
-        try {
-          await analyzeSpill(
-            currentSpill.spillId || "SP101"
-          );
-        } catch {
-          // Fallback handled smoothly
-        }
+      try {
+        await analyzeSpill(currentSpill.spillId, {
+          includeForecast: true,
+          includeImpact: true,
+        });
+        await loadInvestigationResults(currentSpill.spillId);
+      } catch (error) {
+        setApiError(
+          error.message ||
+            "Investigation pipeline failed. Check the backend service logs."
+        );
       }
 
       setInvestigating(false);

@@ -148,10 +148,14 @@ class RealAISClient(AISClient):
         vessel_id = f"VES{int(mmsi):09d}"
         timestamp = str(raw.get("timestamp") or "")
 
+        # Prefer explicit name field; fall back to vessel_name, then a MMSI-derived label
+        raw_name = raw.get("name") or raw.get("vessel_name") or ""
+        vessel_name = str(raw_name).strip() or f"Vessel {mmsi}"
+
         return CandidateVessel(
             vessel_id=vessel_id,
             mmsi=str(mmsi),
-            name=str(raw.get("vessel_type") or f"Vessel {mmsi}"),
+            name=vessel_name,
             vessel_type=raw.get("vessel_type"),
             flag_country=None,
             distance_km=round(distance_km, 3),

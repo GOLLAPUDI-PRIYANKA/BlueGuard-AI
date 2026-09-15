@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -19,21 +19,16 @@ const createVesselIcon = (color = "#3da5ff", isSelected = false) =>
     html: `
       <div style="
         background: ${isSelected ? "#ff9f43" : color};
-        width: ${isSelected ? "32px" : "26px"};
-        height: ${isSelected ? "32px" : "26px"};
+        width: ${isSelected ? "18px" : "14px"};
+        height: ${isSelected ? "18px" : "14px"};
         border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: ${isSelected ? "16px" : "13px"};
-        box-shadow: 0 0 12px ${isSelected ? "rgba(255, 159, 67, 0.8)" : "rgba(61, 165, 255, 0.6)"};
+        box-shadow: 0 0 0 4px ${isSelected ? "rgba(255, 159, 67, 0.28)" : "rgba(61, 165, 255, 0.2)"};
         border: 2px solid #ffffff;
         transition: all 0.2s ease;
-      ">🚢</div>
+      "></div>
     `,
-    iconSize: isSelected ? [32, 32] : [26, 26],
-    iconAnchor: isSelected ? [16, 16] : [13, 13],
+    iconSize: isSelected ? [18, 18] : [14, 14],
+    iconAnchor: isSelected ? [9, 9] : [7, 7],
   });
 
 const originIcon = new L.DivIcon({
@@ -41,21 +36,15 @@ const originIcon = new L.DivIcon({
   html: `
     <div style="
       background: #00d2d3;
-      width: 24px;
-      height: 24px;
+      width: 16px;
+      height: 16px;
       border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #0c1929;
-      font-size: 13px;
-      font-weight: bold;
       border: 2px solid white;
-      box-shadow: 0 0 10px rgba(0, 210, 211, 0.8);
-    ">⊙</div>
+      box-shadow: 0 0 0 5px rgba(0, 210, 211, 0.22);
+    "></div>
   `,
-  iconSize: [24, 24],
-  iconAnchor: [12, 12],
+  iconSize: [16, 16],
+  iconAnchor: [8, 8],
 });
 
 const spillCentroidIcon = new L.DivIcon({
@@ -63,21 +52,16 @@ const spillCentroidIcon = new L.DivIcon({
   html: `
     <div style="
       background: #ff4757;
-      width: 26px;
-      height: 26px;
+      width: 18px;
+      height: 18px;
       border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-size: 14px;
       border: 2px solid white;
-      box-shadow: 0 0 12px rgba(255, 71, 87, 0.8);
+      box-shadow: 0 0 0 6px rgba(255, 71, 87, 0.24);
       animation: pulse 2s infinite;
-    ">⚠</div>
+    "></div>
   `,
-  iconSize: [26, 26],
-  iconAnchor: [13, 13],
+  iconSize: [18, 18],
+  iconAnchor: [9, 9],
 });
 
 const forecastPointIcon = (hours) =>
@@ -102,6 +86,19 @@ const forecastPointIcon = (hours) =>
     iconSize: [24, 24],
     iconAnchor: [12, 12],
   });
+
+// Impact zone color by type
+const impactZoneStyle = (zoneType) => {
+  switch ((zoneType || "").toUpperCase()) {
+    case "COASTAL":
+      return { color: "#f39c12", fillColor: "#f39c12", fillOpacity: 0.18, weight: 2, dashArray: "5 5" };
+    case "FISHING":
+      return { color: "#27ae60", fillColor: "#27ae60", fillOpacity: 0.18, weight: 2, dashArray: "5 5" };
+    case "ENVIRONMENTAL":
+    default:
+      return { color: "#8e44ad", fillColor: "#8e44ad", fillOpacity: 0.18, weight: 2, dashArray: "5 5" };
+  }
+};
 
 // Map Controller for interactive buttons
 function MapControls({ center, onResetView }) {
@@ -137,6 +134,20 @@ function MapControls({ center, onResetView }) {
   );
 }
 
+function MapViewport({ center, resetKey, onResetView }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (onResetView) {
+      onResetView(map);
+    } else {
+      map.setView(center, 10);
+    }
+  }, [center, map, onResetView, resetKey]);
+
+  return null;
+}
+
 export default function MapView({
   spill,
   origin,
@@ -145,7 +156,6 @@ export default function MapView({
   impact = null,
   selectedVesselId = null,
   onSelectVessel = null,
-  activeLayer = "all",
 }) {
   const [layers, setLayers] = useState({
     spill: true,
@@ -159,21 +169,34 @@ export default function MapView({
     setLayers((prev) => ({ ...prev, [layerName]: !prev[layerName] }));
   };
 
-  const centerLat = spill?.centroid?.lat || spill?.latitude || 15.462;
-  const centerLon = spill?.centroid?.lon || spill?.longitude || 73.845;
+  const centerLat = Number(spill?.centroid?.lat ?? spill?.latitude);
+  const centerLon = Number(spill?.centroid?.lon ?? spill?.longitude);
+
+  if (!Number.isFinite(centerLat) || !Number.isFinite(centerLon)) {
+    return (
+      <div className="map-wrap map-empty">
+        <div>
+          <strong>No mapped spill location yet</strong>
+          <span>Upload an image and run AI detection to center the live map.</span>
+        </div>
+      </div>
+    );
+  }
+
   const center = [centerLat, centerLon];
 
   // Origin point
-  const originLat = origin?.estimatedOrigin?.lat || origin?.latitude || 15.201;
-  const originLon = origin?.estimatedOrigin?.lon || origin?.longitude || 73.512;
+  const originLat = Number(origin?.estimatedOrigin?.lat ?? origin?.latitude);
+  const originLon = Number(origin?.estimatedOrigin?.lon ?? origin?.longitude);
+  const hasOrigin =
+    origin &&
+    Number.isFinite(originLat) &&
+    Number.isFinite(originLon);
   const originCenter = [originLat, originLon];
-  const originUncertaintyKm = origin?.uncertaintyKm || 12;
+  const originUncertaintyKm = origin?.uncertaintyKm || 2;
 
   // Backtrack trail line
-  const backtrackTrail = origin?.trail || [
-    [originLat, originLon],
-    [centerLat, centerLon],
-  ];
+  const backtrackTrail = origin?.trail || (hasOrigin ? [originCenter, center] : []);
 
   // Colors for vessel trajectories
   const vesselColors = ["#ff9f43", "#3da5ff", "#a55eea", "#2ed573", "#e55039"];
@@ -182,12 +205,14 @@ export default function MapView({
   const handleResetView = (map) => {
     const points = [
       center,
-      originCenter,
-      ...forecast.map((f) => [f.lat, f.lon]),
+      ...(hasOrigin ? [originCenter] : []),
+      ...forecast
+        .filter((f) => Number.isFinite(f.lat) && Number.isFinite(f.lon))
+        .map((f) => [f.lat, f.lon]),
       ...vessels.flatMap((v) =>
-        (v.trajectory || []).map((p) => [p.lat, p.lon])
+        (v.trajectory || []).map((p) => [Number(p.lat), Number(p.lon)])
       ),
-    ].filter((p) => Boolean(p[0]) && Boolean(p[1]));
+    ].filter((p) => Number.isFinite(p[0]) && Number.isFinite(p[1]));
 
     if (points.length > 0) {
       const bounds = L.latLngBounds(points);
@@ -201,17 +226,24 @@ export default function MapView({
     <div className="map-wrap">
       <MapContainer
         center={center}
-        zoom={8}
+        zoom={10}
         className="map"
         scrollWheelZoom={true}
       >
+        {/* Real OpenStreetMap tile layer — no API key required */}
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          maxZoom={19}
+        />
+        <MapViewport
+          center={center}
+          resetKey={spill?.spillId || spill?.id}
+          onResetView={handleResetView}
         />
 
         {/* -------------------------------------------------- */}
-        {/* SPILL DETECTION LAYER */}
+        {/* SPILL DETECTION LAYER                               */}
         {/* -------------------------------------------------- */}
         {layers.spill && (
           <>
@@ -241,7 +273,7 @@ export default function MapView({
                 </Popup>
               </Polygon>
             ) : (
-              /* Spill Circles fallback */
+              /* Spill circles fallback */
               <>
                 <Circle
                   center={center}
@@ -280,7 +312,7 @@ export default function MapView({
                   <br />
                   Severity: <strong>{spill?.severity}</strong>
                   <br />
-                  Location: {centerLat.toFixed(3)}° N, {centerLon.toFixed(3)}° E
+                  Location: {centerLat.toFixed(4)}° N, {centerLon.toFixed(4)}° E
                 </div>
               </Popup>
             </Marker>
@@ -288,11 +320,11 @@ export default function MapView({
         )}
 
         {/* -------------------------------------------------- */}
-        {/* ORIGIN & BACKTRACKING LAYER */}
+        {/* ORIGIN & BACKTRACKING LAYER                         */}
         {/* -------------------------------------------------- */}
-        {layers.origin && origin && (
+        {layers.origin && hasOrigin && (
           <>
-            {/* Uncertainty Ellipse / Circle */}
+            {/* Uncertainty circle */}
             <Circle
               center={originCenter}
               radius={originUncertaintyKm * 1000}
@@ -319,42 +351,44 @@ export default function MapView({
               </Popup>
             </Circle>
 
-            {/* Origin Center Point Marker */}
+            {/* Origin center point */}
             <Marker position={originCenter} icon={originIcon}>
               <Popup>
                 <div style={{ color: "#111" }}>
                   <strong>Origin Hypocenter</strong>
                   <br />
-                  Coordinates: {originLat.toFixed(3)}° N, {originLon.toFixed(3)}° E
+                  {originLat.toFixed(4)}° N, {originLon.toFixed(4)}° E
                   <br />
                   Estimated Time: {origin.estimatedTime || origin.time}
                 </div>
               </Popup>
             </Marker>
 
-            {/* Backtracking Drift Line */}
-            <Polyline
-              positions={backtrackTrail}
-              pathOptions={{
-                color: "#ff6b81",
-                weight: 3,
-                dashArray: "6 8",
-                opacity: 0.85,
-              }}
-            >
-              <Popup>
-                <div style={{ color: "#111" }}>
-                  <strong>Backtracking Advection Vector</strong>
-                  <br />
-                  Simulated ocean drift trajectory from origin to detection
-                </div>
-              </Popup>
-            </Polyline>
+            {/* Backtracking drift line */}
+            {backtrackTrail.length >= 2 && (
+              <Polyline
+                positions={backtrackTrail}
+                pathOptions={{
+                  color: "#ff6b81",
+                  weight: 3,
+                  dashArray: "6 8",
+                  opacity: 0.85,
+                }}
+              >
+                <Popup>
+                  <div style={{ color: "#111" }}>
+                    <strong>Backtracking Advection Vector</strong>
+                    <br />
+                    Simulated ocean drift trajectory from origin to detection
+                  </div>
+                </Popup>
+              </Polyline>
+            )}
           </>
         )}
 
         {/* -------------------------------------------------- */}
-        {/* FORECAST DRIFT LAYER */}
+        {/* FORECAST DRIFT LAYER                                */}
         {/* -------------------------------------------------- */}
         {layers.forecast && forecast && forecast.length > 0 && (
           <>
@@ -362,7 +396,9 @@ export default function MapView({
             <Polyline
               positions={[
                 center,
-                ...forecast.map((f) => [f.lat, f.lon]),
+                ...forecast
+                  .filter((f) => Number.isFinite(Number(f.lat)) && Number.isFinite(Number(f.lon)))
+                  .map((f) => [Number(f.lat), Number(f.lon)]),
               ]}
               pathOptions={{
                 color: "#ff9f43",
@@ -373,57 +409,63 @@ export default function MapView({
             />
 
             {/* Forecast points and dispersion circles */}
-            {forecast.map((f, idx) => (
-              <React.Fragment key={`forecast-${f.hours || idx}`}>
-                <Circle
-                  center={[f.lat, f.lon]}
-                  radius={Math.sqrt((f.areaSqKm || f.area || 20) / Math.PI) * 1000}
-                  pathOptions={{
-                    color: "#ff9f43",
-                    fillColor: "#ff9f43",
-                    fillOpacity: 0.25 - idx * 0.05,
-                    weight: 1.5,
-                  }}
-                />
-                <Marker
-                  position={[f.lat, f.lon]}
-                  icon={forecastPointIcon(f.hours)}
-                >
-                  <Popup>
-                    <div style={{ color: "#111" }}>
-                      <strong>+{f.hours}h Drift Forecast</strong>
-                      <br />
-                      Predicted Location: {f.lat.toFixed(3)}° N, {f.lon.toFixed(3)}° E
-                      <br />
-                      Predicted Area: {f.areaSqKm || f.area} km²
-                      <br />
-                      Horizon Time: {f.time}
-                      <br />
-                      Status: {f.status || "Active Forecast"}
-                    </div>
-                  </Popup>
-                </Marker>
-              </React.Fragment>
-            ))}
+            {forecast
+              .filter((f) => Number.isFinite(Number(f.lat)) && Number.isFinite(Number(f.lon)))
+              .map((f, idx) => (
+                <React.Fragment key={`forecast-${f.hours || idx}`}>
+                  <Circle
+                    center={[Number(f.lat), Number(f.lon)]}
+                    radius={Math.sqrt((f.areaSqKm || f.area || 20) / Math.PI) * 1000}
+                    pathOptions={{
+                      color: "#ff9f43",
+                      fillColor: "#ff9f43",
+                      fillOpacity: Math.max(0.05, 0.25 - idx * 0.05),
+                      weight: 1.5,
+                    }}
+                  />
+                  <Marker
+                    position={[Number(f.lat), Number(f.lon)]}
+                    icon={forecastPointIcon(f.hours)}
+                  >
+                    <Popup>
+                      <div style={{ color: "#111" }}>
+                        <strong>+{f.hours}h Drift Forecast</strong>
+                        <br />
+                        Predicted Location: {Number(f.lat).toFixed(4)}° N, {Number(f.lon).toFixed(4)}° E
+                        <br />
+                        Predicted Area: {f.areaSqKm || f.area} km²
+                        <br />
+                        Horizon Time: {f.time}
+                        <br />
+                        Status: {f.status || "Active Forecast"}
+                      </div>
+                    </Popup>
+                  </Marker>
+                </React.Fragment>
+              ))}
           </>
         )}
 
         {/* -------------------------------------------------- */}
-        {/* CANDIDATE VESSELS & TRAJECTORIES LAYER */}
+        {/* CANDIDATE VESSELS & TRAJECTORIES LAYER              */}
         {/* -------------------------------------------------- */}
         {layers.vessels &&
           vessels.map((v, i) => {
             const isSelected = selectedVesselId === (v.vesselId || v.mmsi || v.id);
             const color = vesselColors[i % vesselColors.length];
-            const trajectoryPoints = (v.trajectory || []).map((p) => [p.lat, p.lon]);
+            const trajectoryPoints = (v.trajectory || [])
+              .map((p) => [Number(p.lat), Number(p.lon)])
+              .filter((p) => Number.isFinite(p[0]) && Number.isFinite(p[1]));
             const currentPosition =
               trajectoryPoints.length > 0
                 ? trajectoryPoints[trajectoryPoints.length - 1]
-                : [centerLat + (i + 1) * 0.04, centerLon - (i + 1) * 0.05];
+                : null;
+
+            if (!currentPosition) return null;
 
             return (
               <React.Fragment key={v.vesselId || v.mmsi || i}>
-                {/* Historical AIS Trajectory Polyline */}
+                {/* Historical AIS trajectory polyline */}
                 {trajectoryPoints.length > 1 && (
                   <Polyline
                     positions={trajectoryPoints}
@@ -439,19 +481,19 @@ export default function MapView({
                   >
                     <Popup>
                       <div style={{ color: "#111" }}>
-                        <strong>{v.name}</strong> ({v.vesselType || v.type})
+                        <strong>{v.name}</strong> ({v.vesselType || v.vessel_type || v.type || "Unknown"})
                         <br />
                         MMSI: {v.mmsi}
                         <br />
                         Suspect Score: <strong>{v.score}%</strong>
                         <br />
-                        Waypoint Count: {trajectoryPoints.length}
+                        Waypoints: {trajectoryPoints.length}
                       </div>
                     </Popup>
                   </Polyline>
                 )}
 
-                {/* Vessel Position Marker */}
+                {/* Vessel position marker */}
                 <Marker
                   position={currentPosition}
                   icon={createVesselIcon(color, isSelected)}
@@ -463,7 +505,7 @@ export default function MapView({
                     <div style={{ color: "#111" }}>
                       <strong>{v.name}</strong>
                       <br />
-                      Type: {v.vesselType || v.type} | MMSI: {v.mmsi}
+                      Type: {v.vesselType || v.vessel_type || v.type || "Unknown"} | MMSI: {v.mmsi}
                       <br />
                       Attribution Score: <strong>{v.score}%</strong>
                       <br />
@@ -497,38 +539,66 @@ export default function MapView({
           })}
 
         {/* -------------------------------------------------- */}
-        {/* IMPACT ZONES LAYER */}
+        {/* IMPACT ZONES LAYER                                  */}
         {/* -------------------------------------------------- */}
-        {layers.impact && impact?.zones && (
+        {layers.impact && impact && (
           <>
-            {/* Visual representation of coastal impact along Goa coastline */}
-            <Polygon
-              positions={[
-                [15.65, 73.72],
-                [15.45, 73.78],
-                [15.20, 73.92],
-                [15.10, 73.98],
-                [15.10, 74.05],
-                [15.65, 73.85],
-              ]}
-              pathOptions={{
-                color: "#ff4757",
-                fillColor: "#ff4757",
-                fillOpacity: 0.15,
-                weight: 1.5,
-                dashArray: "4 4",
-              }}
-            >
-              <Popup>
-                <div style={{ color: "#111" }}>
-                  <strong>Vulnerable Coastal Zone</strong>
-                  <br />
-                  Risk Level: <strong style={{ color: "#d63031" }}>CRITICAL</strong>
-                  <br />
-                  Affected Shoreline: Goa Beaches & Touristic Fairways
-                </div>
-              </Popup>
-            </Polygon>
+            {/* Coastal risk zone */}
+            {impact.coastalRisk && impact.coastalRisk !== "LOW" && (
+              <Circle
+                center={center}
+                radius={Math.sqrt((impact.affectedAreaSqKm || 20) / Math.PI) * 1000 * 1.4}
+                pathOptions={impactZoneStyle("COASTAL")}
+              >
+                <Popup>
+                  <div style={{ color: "#111" }}>
+                    <strong>Coastal Impact Zone</strong>
+                    <br />
+                    Risk Level: <strong>{impact.coastalRisk}</strong>
+                    <br />
+                    Affected Area: {impact.affectedAreaSqKm} km²
+                  </div>
+                </Popup>
+              </Circle>
+            )}
+
+            {/* Fishing ground risk zone */}
+            {impact.fishingRisk && impact.fishingRisk !== "LOW" && (
+              <Circle
+                center={center}
+                radius={Math.sqrt((impact.affectedAreaSqKm || 20) / Math.PI) * 1000 * 1.2}
+                pathOptions={impactZoneStyle("FISHING")}
+              >
+                <Popup>
+                  <div style={{ color: "#111" }}>
+                    <strong>Fishing Ground Impact Zone</strong>
+                    <br />
+                    Risk Level: <strong>{impact.fishingRisk}</strong>
+                    <br />
+                    Affected Area: {impact.affectedAreaSqKm} km²
+                  </div>
+                </Popup>
+              </Circle>
+            )}
+
+            {/* Marine / environmental risk zone */}
+            {impact.marineRisk && impact.marineRisk !== "LOW" && (
+              <Circle
+                center={center}
+                radius={Math.sqrt((impact.affectedAreaSqKm || 20) / Math.PI) * 1000}
+                pathOptions={impactZoneStyle("ENVIRONMENTAL")}
+              >
+                <Popup>
+                  <div style={{ color: "#111" }}>
+                    <strong>Marine Environmental Zone</strong>
+                    <br />
+                    Risk Level: <strong>{impact.marineRisk}</strong>
+                    <br />
+                    Affected Area: {impact.affectedAreaSqKm} km²
+                  </div>
+                </Popup>
+              </Circle>
+            )}
           </>
         )}
 
@@ -536,11 +606,11 @@ export default function MapView({
       </MapContainer>
 
       {/* -------------------------------------------------- */}
-      {/* OVERLAY BADGES & TOOLS */}
+      {/* OVERLAY BADGES & TOOLS                              */}
       {/* -------------------------------------------------- */}
       <div className="map-overlay map-title">
         <span className="danger-dot" />
-        Case #{spill?.spillId || spill?.id || "SP101"}
+        Case #{spill?.spillId || spill?.id || "—"}
         <span className="investigation-badge">
           {spill?.status || "Under Investigation"}
         </span>
@@ -590,17 +660,20 @@ export default function MapView({
         <div title="Observed slick detection centroid and contour">
           <i className="legend-dot spill" /> Oil Spill Area
         </div>
-        <div title="Backtracked source region within 12km uncertainty radius">
-          <i className="legend-dot origin" /> Estimated Origin (±12km)
+        <div title="Backtracked source region within uncertainty radius">
+          <i className="legend-dot origin" /> Estimated Origin
         </div>
         <div title="Simulated advection drift vector">
           <i className="legend-line-backtrack" /> Backtrack Trail
         </div>
-        <div title="Vessel position and historical voyage track">
+        <div title="Vessel position and historical AIS voyage track">
           <i className="legend-dot vessel" /> AIS Vessel Track
         </div>
         <div title="Predicted movement across 24h/48h/72h horizons">
           <i className="legend-dot forecast" /> Forecast Trajectory
+        </div>
+        <div title="Environmental, coastal and fishing impact zones">
+          <i className="legend-dot impact" /> Impact Zones
         </div>
       </div>
     </div>

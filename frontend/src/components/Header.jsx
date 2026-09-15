@@ -84,10 +84,10 @@ export default function Header({
         </button>
 
         <div className="user">
-          <div className="avatar">MI</div>
+          <div className="avatar">I</div>
           <div>
-            <strong>MI</strong>
-            <span>Marine Investigator</span>
+            <strong>I</strong>
+            <span>Investigator</span>
           </div>
         </div>
       </div>

@@ -35,7 +35,10 @@ async def upload_image(file: UploadFile = File(...)):
             detail="Unsupported image format. Use PNG, JPG, JPEG, TIFF or TIF.",
         )
 
-    upload_dir = Path("/app/data/uploads")
+    # Support both Docker (/app/data/uploads) and local dev (workspace data/uploads)
+    docker_path = Path("/app/data/uploads")
+    local_path = Path(__file__).resolve().parents[4] / "data" / "uploads"
+    upload_dir = docker_path if docker_path.parent.exists() else local_path
     upload_dir.mkdir(parents=True, exist_ok=True)
 
     safe_name = f"{uuid.uuid4().hex}{extension}"
