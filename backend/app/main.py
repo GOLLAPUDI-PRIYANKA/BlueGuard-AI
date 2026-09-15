@@ -1,9 +1,17 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+
 from app.core.config import get_settings
 from app.core.exceptions import AppException
 from app.core.logging import setup_logging
 from app.api.v1 import spills, vessels, dashboard, reports
+
+from fastapi.middleware.cors import CORSMiddleware
+
+
+logger = setup_logging()
+settings = get_settings()
+
 
 logger = setup_logging()
 settings = get_settings()
@@ -18,6 +26,20 @@ app = FastAPI(
     version="0.1.0",
     docs_url="/docs",
     redoc_url="/redoc",
+)
+
+
+# CORS - allows BlueGuard frontend to communicate with backend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://localhost:5175",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -46,6 +68,7 @@ async def general_exception_handler(request: Request, exc: Exception):
     )
 
 
+# API routers
 app.include_router(spills.router, prefix="/api/v1")
 app.include_router(vessels.router, prefix="/api/v1")
 app.include_router(dashboard.router, prefix="/api/v1")
@@ -54,9 +77,14 @@ app.include_router(reports.router, prefix="/api/v1")
 
 @app.get("/", tags=["health"])
 async def root():
+    return {
+        "status": "ok",
+        "service": "BlueGuard AI Backend"
+    }
     return {"status": "ok", "service": "BlueGuard AI Backend"}
 
 
 @app.get("/health", tags=["health"])
 async def health():
+    return {"status": "healthy"}
     return {"status": "healthy"}

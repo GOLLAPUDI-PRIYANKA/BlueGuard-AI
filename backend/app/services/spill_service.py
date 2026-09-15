@@ -17,6 +17,7 @@ from app.schemas.spill import (
     SuspectsData,
     SuspectVessel,
     SuspectEvidence,
+    TrajectoryPoint as SuspectTrajectoryPoint,
 )
 from app.services.ai_client import build_ai_client
 
@@ -148,24 +149,53 @@ class SpillService:
 
     def get_suspects(self, spill_id: str) -> SuspectsData:
         from app.repositories.suspect_repository import SuspectRepository
+        from app.models.vessel_position import VesselPosition
         suspect_repo = SuspectRepository(self.db)
         scores = suspect_repo.get_by_spill_id(spill_id)
         suspects = []
         for s in scores:
             vessel = self.vessel_repo.get_by_id(s.vessel_id)
             name = vessel.name if vessel else "Unknown"
+            mmsi = vessel.mmsi if vessel else None
+            vessel_type = vessel.vessel_type if vessel else None
+            flag_country = vessel.flag_country if vessel else None
             evidence = s.evidence_json or {}
+
+            # Fetch stored AIS trajectory for this vessel
+            positions = (
+                self.db.query(VesselPosition)
+                .filter(VesselPosition.vessel_id == s.vessel_id)
+                .order_by(VesselPosition.timestamp)
+                .all()
+            )
+            trajectory = [
+                SuspectTrajectoryPoint(
+                    lat=pos.latitude,
+                    lon=pos.longitude,
+                    timestamp=pos.timestamp,
+                )
+                for pos in positions
+            ]
+
             suspects.append(
                 SuspectVessel(
                     vesselId=s.vessel_id,
                     name=name,
+                    mmsi=mmsi,
+                    vesselType=vessel_type,
+                    flagCountry=flag_country,
                     score=s.score,
                     evidence=SuspectEvidence(
                         distanceKm=evidence.get("distanceKm", 0.0),
                         timeDifferenceMin=evidence.get("timeDifferenceMin", 0.0),
                         routeConsistency=evidence.get("routeConsistency", 0.0),
                         aisContinuity=evidence.get("aisContinuity", 0.0),
+                        headingConsistency=evidence.get("headingConsistency"),
+                        spatialProximity=evidence.get("spatialProximity"),
+                        temporalProximity=evidence.get("temporalProximity"),
+                        investigationPriority=evidence.get("investigationPriority"),
                     ),
+                    trajectory=trajectory,
                 )
             )
         return SuspectsData(spillId=spill_id, suspects=suspects)

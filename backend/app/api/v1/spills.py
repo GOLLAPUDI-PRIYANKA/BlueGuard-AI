@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Body
+from fastapi import APIRouter, Depends, Body, UploadFile, File, HTTPException
 from sqlalchemy.orm import Session
 from typing import Optional
 from app.api.deps import get_db
@@ -10,9 +10,54 @@ from app.services.analysis_service import AnalysisService
 from app.repositories.forecast_repository import ForecastRepository
 from app.repositories.impact_repository import ImpactRepository
 from app.core.exceptions import SpillNotFoundError
+from pathlib import Path
+import shutil
+import uuid
 
 router = APIRouter(prefix="/spills", tags=["spills"])
 
+@router.post(
+    "/upload",
+    summary="Upload a satellite image",
+    description="Uploads a satellite image and returns its stored path for spill detection.",
+)
+async def upload_image(file: UploadFile = File(...)):
+    allowed_extensions = {".png", ".jpg", ".jpeg", ".tif", ".tiff"}
+
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="No file selected")
+
+    extension = Path(file.filename).suffix.lower()
+
+    if extension not in allowed_extensions:
+        raise HTTPException(
+            status_code=400,
+            detail="Unsupported image format. Use PNG, JPG, JPEG, TIFF or TIF.",
+        )
+
+    # Support both Docker (/app/data/uploads) and local dev (workspace data/uploads)
+    docker_path = Path("/app/data/uploads")
+    local_path = Path(__file__).resolve().parents[4] / "data" / "uploads"
+    upload_dir = docker_path if docker_path.parent.exists() else local_path
+    upload_dir.mkdir(parents=True, exist_ok=True)
+
+    safe_name = f"{uuid.uuid4().hex}{extension}"
+    file_path = upload_dir / safe_name
+
+    try:
+        with file_path.open("wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+    finally:
+        await file.close()
+
+    return {
+        "success": True,
+        "data": {
+            "filename": file.filename,
+            "imageUrl": str(file_path),
+        },
+        "message": "Image uploaded successfully",
+    }
 
 @router.post(
     "/detect",

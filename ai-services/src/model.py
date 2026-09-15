@@ -8,7 +8,7 @@ import segmentation_models_pytorch as smp
 
 def get_model():
     model = smp.Unet(
-        encoder_name="resnet34",        # pretrained encoder backbone
+       encoder_weights=None        # pretrained encoder backbone
         encoder_weights="imagenet",     # use ImageNet pretrained weights
         in_channels=3,                  # RGB input
         classes=1,                      # binary segmentation: oil vs not-oil

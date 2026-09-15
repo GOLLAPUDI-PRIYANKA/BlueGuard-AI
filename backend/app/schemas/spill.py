@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, List
+from typing import Any, Optional, List
 from pydantic import BaseModel, Field
 from app.schemas.common import Coordinate, UtcModel
 from app.models.spill import SpillSeverity, SpillStatus
@@ -62,13 +62,27 @@ class SuspectEvidence(UtcModel):
     timeDifferenceMin: float
     routeConsistency: float = Field(..., ge=0, le=1)
     aisContinuity: float = Field(..., ge=0, le=1)
+    headingConsistency: Optional[float] = Field(None, ge=0, le=1)
+    spatialProximity: Optional[float] = Field(None, ge=0, le=1)
+    temporalProximity: Optional[float] = Field(None, ge=0, le=1)
+    investigationPriority: Optional[str] = None
+
+
+class TrajectoryPoint(UtcModel):
+    lat: float
+    lon: float
+    timestamp: Optional[Any] = None
 
 
 class SuspectVessel(UtcModel):
     vesselId: str
     name: str
+    mmsi: Optional[str] = None
+    vesselType: Optional[str] = None
+    flagCountry: Optional[str] = None
     score: float = Field(..., ge=0, le=100)
     evidence: SuspectEvidence
+    trajectory: List[TrajectoryPoint] = Field(default_factory=list)
 
 
 class SuspectsData(UtcModel):

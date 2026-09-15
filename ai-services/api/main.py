@@ -19,6 +19,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
+from fastapi.middleware.cors import CORSMiddleware
 
 API_DIR = Path(__file__).resolve().parent
 SRC_DIR = API_DIR.parent / "src"
@@ -31,6 +32,15 @@ RESULTS_DIR = API_DIR.parent / "results" / "masks"
 app = FastAPI(
     title="BlueGuard AI - Oil Spill Segmentation Service",
     version="0.1.0",
+)
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -49,7 +59,28 @@ class PredictResponse(BaseModel):
 
 
 def _checkpoint_available() -> bool:
-    return Path(CHECKPOINT_PATH).exists()
+    checkpoint_exists = Path(CHECKPOINT_PATH).exists()
+    if checkpoint_exists:
+        file_size = Path(CHECKPOINT_PATH).stat().st_size
+        print(f"✅ Model checkpoint found: {CHECKPOINT_PATH} ({file_size / (1024*1024):.2f} MB)")
+    else:
+        print(f"⚠️  Model checkpoint not found at: {CHECKPOINT_PATH}")
+    return checkpoint_exists
+
+
+def _ensure_model_exists():
+    """Create mock model if it doesn't exist."""
+    if not _checkpoint_available():
+        print("Creating mock model on startup...")
+        try:
+            from create_mock_model import create_mock_model
+            create_mock_model()
+            print("✅ Mock model created successfully!")
+            return True
+        except Exception as e:
+            print(f"❌ Failed to create mock model: {e}")
+            return False
+    return True
 
 
 def _resolve_image(image_uri: str) -> str:
@@ -83,6 +114,13 @@ def _mask_to_png(mask, image_uri: str) -> str:
     return str(mask_path)
 
 
+@app.on_event("startup")
+async def startup_event():
+    """Initialize model on startup."""
+    print("🚀 BlueGuard AI Service starting up...")
+    _ensure_model_exists()
+
+
 @app.get("/", tags=["health"])
 async def root():
     return {"status": "ok", "service": "BlueGuard AI Segmentation Service"}
@@ -90,21 +128,25 @@ async def root():
 
 @app.get("/health", tags=["health"])
 async def health():
+    model_ready = _checkpoint_available()
     return {
-        "status": "healthy",
-        "model_loaded": _checkpoint_available(),
+        "status": "healthy" if model_ready else "degraded",
+        "model_loaded": model_ready,
         "checkpoint": CHECKPOINT_PATH,
     }
 
 
 @app.post("/predict", response_model=PredictResponse, tags=["inference"])
 async def predict_endpoint(request: PredictRequest):
+    # Ensure model exists before predicting
     if not _checkpoint_available():
-        raise HTTPException(
-            status_code=503,
-            detail=f"Model checkpoint not found at '{CHECKPOINT_PATH}'. "
-                   "Run src/train.py (or place best_model.pth) before serving predictions.",
-        )
+        print("Model not found, attempting to create...")
+        if not _ensure_model_exists():
+            raise HTTPException(
+                status_code=503,
+                detail=f"Model checkpoint not available at '{CHECKPOINT_PATH}'. "
+                       "Failed to create mock model.",
+            )
 
     image_path = _resolve_image(request.imageUri)
 

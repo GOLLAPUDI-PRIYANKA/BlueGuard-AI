@@ -11,7 +11,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U marineguard"]
+      test: ["CMD-SHELL", "pg_isready -U marineguard -d marineguard_db"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -24,6 +24,7 @@ services:
       PYTHONUNBUFFERED: "1"
     volumes:
       - ./ai-services/outputs:/app/outputs
+      - ./data/uploads:/app/data/uploads
     ports:
       - "8001:8001"
     command: uvicorn api.main:app --host 0.0.0.0 --port 8001
@@ -40,8 +41,11 @@ services:
       ATTRIBUTION_SERVICE_URL: http://host.docker.internal:8004
       FORECAST_SERVICE_URL: http://host.docker.internal:8005
       IMPACT_SERVICE_URL: http://host.docker.internal:8006
+      USE_MOCK_SERVICES: "false"
     ports:
       - "8000:8000"
+    volumes:
+      - ./data/uploads:/app/data/uploads
     depends_on:
       db:
         condition: service_healthy
